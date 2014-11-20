@@ -49,6 +49,12 @@ def makems(msname=None,label=None,tel='MeerKAT',pos=None,pos_type='CASA',
            lon_lat=None,
            noup=False):
     """ Creates an empty measurement set using CASA simulate (sm) tool. """
+
+    # sanity check/correction
+    if scan_length > synthesis:
+        print 'SIMMS ## WARN: Scan length > synthesis time, setiing scan_length=syntheis'
+        scan_length = synthesis
+    start_time = start_time or -scan_length/2
  
     if not isinstance(dtime,str):
         dtime = '%ds'%dtime

@@ -94,7 +94,8 @@ if __name__=='__main__':
             help='Reference position of telescope. Comma '
                  'seperated longitude,lattitude and elevation [deg,deg,m]. '
                  'Elevation is not crucial, lon,lat should be enough. If not specified,' 
-                 ' we\'ll try to get this info from the CASA database: No default')
+                 ' we\'ll try to get this info from the CASA database '
+                 '(assuming that your observatory is known to CASA; --tel, -T): No default')
     add('-nu','--noup',dest='noup',action='store_true',
             help='Enable this to indicate that your ENU file does not have an '
                  '\'up\' dimension: This is not the default' )
@@ -113,11 +114,13 @@ if __name__=='__main__':
     add('-st','--synthesis-time',dest='synthesis',default=4,type=float,
             help='Synthesis time in hours: default is 4.0')
     add('-sl','--scan-length',dest='scan_length',default=4,type=float,
-            help='Synthesis time in hours: default is 4.0')
+            help='Synthesis time in hours: default is 4.0 unless syntheis time is'
+                  ' smaller than this, in which case this is set to the sysntheis time')
     add('-dt','--dtime',dest='dtime',default=10,type=int,
             help='Integration time in seconds : default is 10s')
-    add('-ih','--init-ha',dest='init_ha',default=np.nan,type=float,
-            help='Initial hour angle for observation default is -ve[syntheis time]/2')
+    add('-ih','--init-ha',dest='init_ha',default=None,type=float,
+            help='Initial hour angle for observation. If not specified '
+                 'we use -[scan_length/2]')
     add('-nc','--nchan',dest='nchan',default=1,type=int,
             help='Number of frequency channels : default is 1')
     add('-f0','--freq0',dest='freq0',default='700MHz',
@@ -145,9 +148,6 @@ if __name__=='__main__':
         try: 
             setattr(args,item,float(getattr(args,item)))
         except ValueError:  "do nothing"
-
-    if np.isnan(args.init_ha):
-        setattr(args,init_ha,args.synthesis/2)
 
     simms(msname=args.name,label=args.label,tel=args.tel,pos=args.pos,
           pos_type=args.type,ra=args.ra,dec=args.dec,synthesis=args.synthesis,scan_length=args.scan_length,

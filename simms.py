@@ -15,23 +15,23 @@ def simms(msname=None,label=None,tel=None,pos=None,pos_type='casa',
           ra='0h0m0s',dec='-30d0m0s',synthesis=4,scan_length=4,dtime=10,freq0=700e6,
           dfreq=50e6,nchan=1,stokes='LL LR RL RR',start_time=-2,setlimits=False,
           elevation_limit=0,shadow_limit=0,outdir='.',nolog=False,
-          coords='itrf',lon_lat=None,noup=False):
+          coords='itrf',lon_lat=None,noup=False,nbands=1):
     """ Make simulated measurement set """
 
-    if not isinstance(dtime,str):
-        dtime = '%ds'%dtime
+#   if not isinstance(dtime,str):
+#       dtime = '%ds'%dtime
 
-    #TODO(sphe) Make this more general; try to find most sensible unit in [kHz,MHz,GHz]
-    if not isinstance(freq0,str):
-        freq0 = '%dMHz'%(freq0*1e-6)
-    if not isinstance(dfreq,str):
-        dfreq = '%dMHz'%(dfreq*1e-6)
+#   #TODO(sphe) Make this more general; try to find most sensible unit in [kHz,MHz,GHz]
+#   if not isinstance(freq0,str):
+#       freq0 = '%dMHz'%(freq0*1e-6)
+#   if not isinstance(dfreq,str):
+#       dfreq = '%dMHz'%(dfreq*1e-6)
 
-    if msname is None:
-        dd,rem = dec.split('d')
-        dd = float(dd) + float(rem.split('m')[0])/60
-        dec_sign = '%s%d'%('m' if dd<0 else 'p',abs(dd))
-        msname = '%s/%s_%s_%dh%s_%s%s_%dch.MS'%(outdir,label or tel,dec_sign,synthesis,dtime,freq0,dfreq,nchan)
+#   if msname is None:
+#       dd,rem = dec.split('d')
+#       dd = float(dd) + float(rem.split('m')[0])/60
+#       dec_sign = '%s%d'%('m' if dd<0 else 'p',abs(dd))
+#       msname = '%s/%s_%s_%dh%s_%s%s_%dch.MS'%(outdir,label or tel,dec_sign,synthesis,dtime,freq0,dfreq,nchan)
 
     casa_script = tempfile.NamedTemporaryFile(suffix='.py')
     casa_script.write('# Auto Gen casapy script. From simms.py\n')
@@ -42,7 +42,7 @@ def simms(msname=None,label=None,tel=None,pos=None,pos_type='casa',
           'scan_length=%(scan_length).4g, dtime="%(dtime)s", freq0="%(freq0)s", dfreq="%(dfreq)s", '\
           'nchan=%(nchan)d, stokes="%(stokes)s", start_time=%(start_time).4g, setlimits=%(setlimits)s, '\
           'elevation_limit=%(elevation_limit)f, shadow_limit=%(shadow_limit)f, '\
-          'coords="%(coords)s",lon_lat=%(lon_lat)s, noup=%(noup)s'%locals()
+          'coords="%(coords)s",lon_lat=%(lon_lat)s, noup=%(noup)s, nbands=%(nbands)d'%locals()
     casa_script.write('makems(%s)\nexit'%fmt)
     casa_script.flush()
 
@@ -62,8 +62,6 @@ def simms(msname=None,label=None,tel=None,pos=None,pos_type='casa',
         process.wait()
     if process.returncode:
         print 'ERROR: simms.py returns errr code %d'%(process.returncode)
-    else:
-        print 'DONE: simms.py succeeded. MS is at %s'%msname
 
     casa_script.close()
     casa_log_time_stamp = "%d%02d%02d-%02d%02d"%(time.gmtime()[:5])
@@ -127,6 +125,8 @@ if __name__=='__main__':
             help='Start frequency. Specify as val[unit]. E.g 700MHz, not unit => Hz : default is 700MHz')
     add('-df','--dfreq',dest='dfreq',default='50MHz',
             help='Channel width. Specify as val[unit]. E.g 700MHz, not unit => Hz : default is 50MHz')
+    add('-nb','--nband',dest='nband',default=1,type=int,
+            help='Number of subbands : default is 1')
     add('-pl','--pol',dest='pol',default='LL LR RL RR',
             help='Polarization : default is LL LR RL RR')
     add('-stl','--set-limits',dest='set_limits',action='store_true',
@@ -154,4 +154,4 @@ if __name__=='__main__':
           dtime=args.dtime,freq0=args.freq0,dfreq=args.dfreq,nchan=args.nchan,
           stokes=args.pol,start_time=args.init_ha,setlimits=args.set_limits,
           elevation_limit=args.elevation_limit,shadow_limit=args.shadow_limit,
-          outdir=args.outdir,coords=args.coords,lon_lat=args.lon_lat,noup=args.noup)
+          outdir=args.outdir,coords=args.coords,lon_lat=args.lon_lat,noup=args.noup,nbands=args.nband)

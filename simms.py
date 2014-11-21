@@ -47,6 +47,7 @@ def simms(msname=None,label=None,tel=None,pos=None,pos_type='casa',
     casa_script.flush()
 
     tmpfile = casa_script.name
+    casa_log_time_stamp = "%d%02d%02d-%02d%02d"%(time.gmtime()[:5])
     process = subprocess.Popen(['casapy --nologger --log2term %s -c %s'%('--nologfile'\
                   if nolog else '--logfile log-simms.txt',repr(tmpfile))],
                   stderr=subprocess.PIPE if not isinstance(sys.stderr,file) else sys.stderr,
@@ -64,7 +65,6 @@ def simms(msname=None,label=None,tel=None,pos=None,pos_type='casa',
         print 'ERROR: simms.py returns errr code %d'%(process.returncode)
 
     casa_script.close()
-    casa_log_time_stamp = "%d%02d%02d-%02d%02d"%(time.gmtime()[:5])
     os.system('rm -f ipython-%s*.log '%casa_log_time_stamp)
     return msname
 

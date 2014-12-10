@@ -15,23 +15,9 @@ def simms(msname=None,label=None,tel=None,pos=None,pos_type='casa',
           ra='0h0m0s',dec='-30d0m0s',synthesis=4,scan_length=4,dtime=10,freq0=700e6,
           dfreq=50e6,nchan=1,stokes='LL LR RL RR',start_time=-2,setlimits=False,
           elevation_limit=0,shadow_limit=0,outdir='.',nolog=False,
-          coords='itrf',lon_lat=None,noup=False,nbands=1):
+          coords='itrf',lon_lat=None,noup=False,nbands=1,direction=[]):
     """ Make simulated measurement set """
 
-#   if not isinstance(dtime,str):
-#       dtime = '%ds'%dtime
-
-#   #TODO(sphe) Make this more general; try to find most sensible unit in [kHz,MHz,GHz]
-#   if not isinstance(freq0,str):
-#       freq0 = '%dMHz'%(freq0*1e-6)
-#   if not isinstance(dfreq,str):
-#       dfreq = '%dMHz'%(dfreq*1e-6)
-
-#   if msname is None:
-#       dd,rem = dec.split('d')
-#       dd = float(dd) + float(rem.split('m')[0])/60
-#       dec_sign = '%s%d'%('m' if dd<0 else 'p',abs(dd))
-#       msname = '%s/%s_%s_%dh%s_%s%s_%dch.MS'%(outdir,label or tel,dec_sign,synthesis,dtime,freq0,dfreq,nchan)
 
     casa_script = tempfile.NamedTemporaryFile(suffix='.py')
     casa_script.write('# Auto Gen casapy script. From simms.py\n')
@@ -42,7 +28,8 @@ def simms(msname=None,label=None,tel=None,pos=None,pos_type='casa',
           'scan_length=%(scan_length).4g, dtime="%(dtime)s", freq0="%(freq0)s", dfreq="%(dfreq)s", '\
           'nchan=%(nchan)d, stokes="%(stokes)s", start_time=%(start_time).4g, setlimits=%(setlimits)s, '\
           'elevation_limit=%(elevation_limit)f, shadow_limit=%(shadow_limit)f, '\
-          'coords="%(coords)s",lon_lat=%(lon_lat)s, noup=%(noup)s, nbands=%(nbands)d'%locals()
+          'coords="%(coords)s",lon_lat=%(lon_lat)s, noup=%(noup)s, nbands=%(nbands)d, '\
+          'direction=%(direction)s'%locals()
     casa_script.write('makems(%s)\nexit'%fmt)
     casa_script.flush()
 
@@ -105,10 +92,13 @@ if __name__=='__main__':
             help='Directory in which to save the MS: default is working directory')
     add('-l','--label',dest='label',
             help='Label to add to the auto generated MS name (if --name is not given)')
+    add('-dir','--direction',dest='direction',action='append',default=[],
+            help='Pointing direction. Example J2000,0h0m0s,-30d0m0d. Option '
+                 '--direction may be specified multiple times for multiple pointings')
     add('-ra','--ra',dest='ra',default='0h0m0s',
-            help = 'Right Assention in hms : default is 0h0m0s')
+            help = 'Right Assention in hms or val[unit] : default is 0h0m0s')
     add('-dec','--dec',dest='dec',default='-30d0m0s',type=str,
-            help='Declination in dms: default is -30d0m0s')
+            help='Declination in dms or val[unit]: default is -30d0m0s')
     add('-st','--synthesis-time',dest='synthesis',default=4,type=float,
             help='Synthesis time in hours: default is 4.0')
     add('-sl','--scan-length',dest='scan_length',default=4,type=float,
@@ -154,4 +144,5 @@ if __name__=='__main__':
           dtime=args.dtime,freq0=args.freq0,dfreq=args.dfreq,nchan=args.nchan,
           stokes=args.pol,start_time=args.init_ha,setlimits=args.set_limits,
           elevation_limit=args.elevation_limit,shadow_limit=args.shadow_limit,
-          outdir=args.outdir,coords=args.coords,lon_lat=args.lon_lat,noup=args.noup,nbands=args.nband)
+          outdir=args.outdir,coords=args.coords,lon_lat=args.lon_lat,noup=args.noup,
+          direction=args.direction,nbands=args.nband)

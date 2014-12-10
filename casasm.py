@@ -1,4 +1,5 @@
 # create a sumulated measurement from given a list of itrf antenna position or an antenna table (Casa table)
+# Sphesihle Makhathini sphemakh@gmail.com
 import os
 import sys
 import numpy as np
@@ -43,6 +44,7 @@ def freq_unit(val):
 
 def makems(msname=None,label=None,tel='MeerKAT',pos=None,pos_type='CASA',
            ra='0h0m0s',dec='-30d0m0s',
+           direction=[],
            synthesis=4,
            scan_length=4,dtime=10,
            freq0=700e6,dfreq=50e6,nchan=1,
@@ -73,7 +75,6 @@ def makems(msname=None,label=None,tel='MeerKAT',pos=None,pos_type='CASA',
         try: return float(val)
         except ValueError: return val
 
-
     if nbands>1:
         if isinstance(freq0,str) and freq0.find(',')>0:
             freqs = freq0.split(',')
@@ -91,7 +92,6 @@ def makems(msname=None,label=None,tel='MeerKAT',pos=None,pos_type='CASA',
             freqs = ['%.4gMHz'%f for f in np.arange(nbands)*(nchan*df) + freq]
             freq0 = freqs[0]
 
-
     freq0,dfreq = toFloat(freq0),toFloat(dfreq)
     if not isinstance(freq0,str):
         unit,mult = freq_unit(freq0)
@@ -104,9 +104,9 @@ def makems(msname=None,label=None,tel='MeerKAT',pos=None,pos_type='CASA',
     if msname.lower().strip()=='none': 
         msname = None
     if msname is None:
-        dd = int(qa.unit(dec)['value'])
-        dec_sign = '%s%d'%('m' if dd<0 else 'p',abs(dd))
-        msname = '%s/%s_%s_%dh%s_%s%s_%dch.MS'%(mspath,label or tel,dec_sign,synthesis,dtime,freq0,dfreq,nchan)
+        #dd = int(qa.unit(dec)['value'])
+        #dec_sign = '%s%d'%('m' if dd<0 else 'p',abs(dd))
+        msname = '%s/%s_%dh%s_%s%s_%dch.MS'%(mspath,label or tel,synthesis,dtime,freq0,dfreq,nchan)
 
     obs_pos = None
     lon,lat = None,None
@@ -151,10 +151,9 @@ def makems(msname=None,label=None,tel='MeerKAT',pos=None,pos_type='CASA',
         
     sm.open(msname)
     ref_time = me.epoch('IAT','2012/01/01')
-    direction = sourcedirection = me.direction('J2000',ra,dec )
    
     for i in range(nbands): 
-        sm.setspwindow(spwname = 'w%02d'%i,
+        sm.setspwindow(spwname = '%02d'%i,
                    freq = freqs[i] if nbands>1 else freq0,
                    deltafreq = dfreq,
                    freqresolution = dfreq,
@@ -171,31 +170,37 @@ def makems(msname=None,label=None,tel='MeerKAT',pos=None,pos_type='CASA',
                  referencelocation = obs_pos)
 
     sm.setfeed(mode='perfect X Y')
-    sm.setfield(sourcename='0',sourcedirection=direction)
+
+    if direction is None:
+        direction = [me.direction('J2000',ra,dec )]
+    for fieldID,field in enumerate(direction):
+        sm.setfield(sourcename='%02d'%fieldID,sourcedirection=field)
+
     sm.settimes(integrationtime = dtime,
                 usehourangle = True,
                 referencetime = ref_time)
-
+    
     if setlimits:
         sm.setlimits(shadowlimit=shadow_limit,elevationlimit=elevation_limit)
     sm.setauto(autocorrwt=0.0)
     _start_time = start_time
-    for ddid in range(nbands):
-        scan = 0
-        start_time = _start_time
-        end_time = start_time + synthesis
-        while (start_time < end_time):
-            duration = (scan_length + start_time)*3600
-            sm.observe('0','w%02d'%ddid,
-                       starttime='%ds'%(start_time*3600),
-                       stoptime='%ds'%(duration))
-            me.doframe(ref_time)
-            me.doframe(obs_pos)
-            hadec = me.direction('hadec',qa.time('%fs'%(duration/2))[0],dec)
-            azel = me.measure(hadec,'azel')
-            sm.setdata(msselect='SCAN_NUMBER==%d && DATA_DESC_ID==%d'%(scan,ddid))
-            start_time += scan_length
-            scan += 1
+    for fid in range(len(direction)):
+	   for ddid in range(nbands):
+	       scan = 0
+	       start_time = _start_time
+	       end_time = start_time + synthesis
+	       while (start_time < end_time):
+	           duration = (scan_length + start_time)*3600
+	           sm.observe('%02d'%fid,'%02d'%ddid,
+	                      starttime='%ds'%(start_time*3600),
+	                      stoptime='%ds'%(duration))
+	           me.doframe(ref_time)
+	           me.doframe(obs_pos)
+	           hadec = me.direction('hadec',qa.time('%fs'%(duration/2))[0],dec)
+	           azel = me.measure(hadec,'azel')
+	           sm.setdata(msselect='SCAN_NUMBER==%d && DATA_DESC_ID==%d && FIELD_ID==%d'%(scan,ddid,fid))
+	           start_time += scan_length
+	           scan += 1
 #        if noise: 
 #            sm.setnoise(mode='simplenoise',simplenoise=noise)
     sm.done()

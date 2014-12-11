@@ -171,7 +171,7 @@ def makems(msname=None,label=None,tel='MeerKAT',pos=None,pos_type='CASA',
 
     sm.setfeed(mode='perfect X Y')
 
-    if direction is None:
+    if direction in [None,[]]:
         direction = [me.direction('J2000',ra,dec )]
     for fieldID,field in enumerate(direction):
         sm.setfield(sourcename='%02d'%fieldID,sourcedirection=field)

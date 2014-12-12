@@ -18,7 +18,8 @@ def simms(msname=None,label=None,tel=None,pos=None,pos_type='casa',
           coords='itrf',lon_lat=None,noup=False,nbands=1,direction=[]):
     """ Make simulated measurement set """
 
-
+    if isinstance(direction,str):
+        direction = [direction]
     casa_script = tempfile.NamedTemporaryFile(suffix='.py')
     casa_script.write('# Auto Gen casapy script. From simms.py\n')
     casa_script.write('execfile("%s/casasm.py")\n'%simms_path)

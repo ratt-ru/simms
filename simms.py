@@ -132,8 +132,8 @@ if __name__=='__main__':
     args = parser.parse_args()
     if not args.tel:
         parser.error('Telescope name (--tel ot -T) is required')
-    if args.name:
-        args.name = '"%s"'%(args.name)
+#    if args.name:
+#        args.name = '"%s"'%(args.name)
 
     for item in 'freq0','dfreq':
         try: 

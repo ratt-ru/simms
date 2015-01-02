@@ -103,6 +103,7 @@ def makems(msname=None,label=None,tel='MeerKAT',pos=None,pos_type='CASA',
     stokes = 'LL LR RL RR'
     if msname.lower().strip()=='none': 
         msname = None
+    #TODO: DO The above check for all other variables whch do not have defaults
     if msname is None:
         #dd = int(qa.unit(dec)['value'])
         #dec_sign = '%s%d'%('m' if dd<0 else 'p',abs(dd))
@@ -173,8 +174,8 @@ def makems(msname=None,label=None,tel='MeerKAT',pos=None,pos_type='CASA',
 
     if direction in [None,[]]:
         direction = [me.direction('J2000',ra,dec )]
-    for fieldID,field in enumerate(direction):
-        sm.setfield(sourcename='%02d'%fieldID,sourcedirection=field)
+    for fid,field in enumerate(direction):
+        sm.setfield(sourcename='%02d'%fid,sourcedirection=field)
 
     sm.settimes(integrationtime = dtime,
                 usehourangle = True,
@@ -185,22 +186,22 @@ def makems(msname=None,label=None,tel='MeerKAT',pos=None,pos_type='CASA',
     sm.setauto(autocorrwt=0.0)
     _start_time = start_time
     for fid in range(len(direction)):
-	   for ddid in range(nbands):
-	       scan = 0
-	       start_time = _start_time
-	       end_time = start_time + synthesis
-	       while (start_time < end_time):
-	           duration = (scan_length + start_time)*3600
-	           sm.observe('%02d'%fid,'%02d'%ddid,
-	                      starttime='%ds'%(start_time*3600),
-	                      stoptime='%ds'%(duration))
-	           me.doframe(ref_time)
-	           me.doframe(obs_pos)
-	           hadec = me.direction('hadec',qa.time('%fs'%(duration/2))[0],dec)
-	           azel = me.measure(hadec,'azel')
-	           sm.setdata(msselect='SCAN_NUMBER==%d && DATA_DESC_ID==%d && FIELD_ID==%d'%(scan,ddid,fid))
-	           start_time += scan_length
-	           scan += 1
+        for ddid in range(nbands):
+            scan = 0
+            start_time = _start_time
+            end_time = start_time + synthesis
+            while (start_time < end_time):
+                duration = (scan_length + start_time)*3600
+                sm.observe('%02d'%fid,'%02d'%ddid,
+                           starttime='%ds'%(start_time*3600),
+                           stoptime='%ds'%(duration))
+                me.doframe(ref_time)
+                me.doframe(obs_pos)
+                #hadec = me.direction('hadec',qa.time('%fs'%(duration/2))[0],dec)
+                #azel = me.measure(hadec,'azel')
+                sm.setdata(msselect='SCAN_NUMBER==%d && DATA_DESC_ID==%d && FIELD_ID==%d'%(scan,ddid,fid))
+                start_time += scan_length
+                scan += 1
 #        if noise: 
 #            sm.setnoise(mode='simplenoise',simplenoise=noise)
     sm.done()

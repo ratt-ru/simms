@@ -30,7 +30,7 @@ def simms(msname=None,label=None,tel=None,pos=None,pos_type='casa',
           'nchan=%(nchan)d, stokes="%(stokes)s", start_time=%(start_time).4g, setlimits=%(setlimits)s, '\
           'elevation_limit=%(elevation_limit)f, shadow_limit=%(shadow_limit)f, '\
           'coords="%(coords)s",lon_lat=%(lon_lat)s, noup=%(noup)s, nbands=%(nbands)d, '\
-          'direction=%(direction)s'%locals()
+          'direction=%(direction)s, outdir="%(outdir)s"'%locals()
     casa_script.write('makems(%s)\nexit'%fmt)
     casa_script.flush()
 

@@ -55,7 +55,7 @@ def makems(msname=None,label=None,tel='MeerKAT',pos=None,pos_type='CASA',
            setlimits=False,
            elevation_limit=None,
            shadow_limit=None,
-           mspath='.',
+           outdir='.',
            coords='itrf',           
            lon_lat=None,
            noup=False):
@@ -107,7 +107,7 @@ def makems(msname=None,label=None,tel='MeerKAT',pos=None,pos_type='CASA',
     if msname is None:
         #dd = int(qa.unit(dec)['value'])
         #dec_sign = '%s%d'%('m' if dd<0 else 'p',abs(dd))
-        msname = '%s/%s_%dh%s_%s%s_%dch.MS'%(mspath,label or tel,synthesis,dtime,freq0,dfreq,nchan)
+        msname = '%s/%s_%dh%s_%s%s_%dch.MS'%(outdir,label or tel,synthesis,dtime,freq0,dfreq,nchan)
 
     obs_pos = None
     lon,lat = None,None

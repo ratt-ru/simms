@@ -5,7 +5,6 @@ import sys
 import numpy as np
 import math
 
-
 DEG = 180/math.pi
 
 def get_int_data(tab):
@@ -16,6 +15,7 @@ def get_int_data(tab):
     station = tab.getcol('STATION')
     mount = tab.getcol('MOUNT')
     return  (x,y,z),dish_diam,station,mount
+
 
 def enu2xyz (refpos_wgs84,enu):
     """ converts xyz0 + ENU (Nx3 array) into xyz """
@@ -30,20 +30,10 @@ def enu2xyz (refpos_wgs84,enu):
     ])
   
     xyz = xyz0[np.newaxis,:] + enu.dot(xform);
-    # return positions
     return xyz
 
-def freq_unit(val):
-    val = val/1e3
-    if val>10e6:
-        return 'GHz',1e9
-    elif val>1e3:
-        return 'MHz',1e6
-    else: 
-        return 'kHz',1e3
 
 def makems(msname=None,label=None,tel='MeerKAT',pos=None,pos_type='CASA',
-           ra='0h0m0s',dec='-30d0m0s',
            direction=[],
            synthesis=4,
            scan_length=4,dtime=10,
@@ -58,6 +48,7 @@ def makems(msname=None,label=None,tel='MeerKAT',pos=None,pos_type='CASA',
            outdir='.',
            coords='itrf',           
            lon_lat=None,
+           date=None,
            noup=False):
     """ Creates an empty measurement set using CASA simulate (sm) tool. """
 
@@ -70,44 +61,17 @@ def makems(msname=None,label=None,tel='MeerKAT',pos=None,pos_type='CASA',
     if not isinstance(dtime,str):
         dtime = '%ds'%dtime
  
-    # The price you pay for allowing both string and float values for the same otions
+    # The price you pay for allowing both string and float values for the same options
     def toFloat(val):
         try: return float(val)
         except ValueError: return val
-
-    if nbands>1:
-        if isinstance(freq0,str) and freq0.find(',')>0:
-            freqs = freq0.split(',')
-            freq0 = freqs[0]
-        else:
-            freq0,dfreq = toFloat(freq0),toFloat(dfreq)
-            if isinstance(freq0,str):
-                freq = qa.convertfreq(freq0)['value']/1e6
-            else:
-                freq = freq0/1e6
-            if isinstance(dfreq,str):
-                df = qa.convertfreq(dfreq)
-            else:
-                df = dfreq/1e6
-            freqs = ['%.4gMHz'%f for f in np.arange(nbands)*(nchan*df) + freq]
-            freq0 = freqs[0]
-
-    freq0,dfreq = toFloat(freq0),toFloat(dfreq)
-    if not isinstance(freq0,str):
-        unit,mult = freq_unit(freq0)
-        freq0 = '%.4g%s'%(freq0/mult,unit)
-    if not isinstance(dfreq,str):
-        unit,mult = freq_unit(dfreq)
-        dfreq = '%.4g%s'%(dfreq/mult,unit)
     
     stokes = 'LL LR RL RR'
     if msname.lower().strip()=='none': 
         msname = None
     #TODO: DO The above check for all other variables whch do not have defaults
     if msname is None:
-        #dd = int(qa.unit(dec)['value'])
-        #dec_sign = '%s%d'%('m' if dd<0 else 'p',abs(dd))
-        msname = '%s/%s_%dh%s_%s%s_%dch.MS'%(outdir,label or tel,synthesis,dtime,freq0,dfreq,nchan)
+        msname = '%s/%s_%dh%s.MS'%(outdir,label or tel,synthesis,dtime)
 
     obs_pos = None
     lon,lat = None,None
@@ -151,14 +115,14 @@ def makems(msname=None,label=None,tel='MeerKAT',pos=None,pos_type='CASA',
         dish_diam,station,mount = pos['dd'],pos['station'],pos['mount']
         
     sm.open(msname)
-    ref_time = me.epoch('IAT','2012/01/01')
+    ref_time = me.epoch('IAT',date or '2015/01/01')
    
-    for i in range(nbands): 
+    for i,(freq,df,nc) in enumerate( zip(freq0,dfreq,nchan) ): 
         sm.setspwindow(spwname = '%02d'%i,
-                   freq = freqs[i] if nbands>1 else freq0,
-                   deltafreq = dfreq,
-                   freqresolution = dfreq,
-                   nchannels = nchan,
+                   freq = freq,
+                   deltafreq = df,
+                   freqresolution = df,
+                   nchannels = nc,
                    stokes= stokes)
 
     sm.setconfig(telescopename = tel,
@@ -172,8 +136,7 @@ def makems(msname=None,label=None,tel='MeerKAT',pos=None,pos_type='CASA',
 
     sm.setfeed(mode='perfect X Y')
 
-    if direction in [None,[]]:
-        direction = [me.direction('J2000',ra,dec )]
+    nfields = len(direction)
     for fid,field in enumerate(direction):
         sm.setfield(sourcename='%02d'%fid,sourcedirection=field)
 
@@ -184,27 +147,20 @@ def makems(msname=None,label=None,tel='MeerKAT',pos=None,pos_type='CASA',
     if setlimits:
         sm.setlimits(shadowlimit=shadow_limit,elevationlimit=elevation_limit)
     sm.setauto(autocorrwt=0.0)
-    _start_time = start_time
-    for fid in range(len(direction)):
-        for ddid in range(nbands):
-            scan = 0
-            start_time = _start_time
-            end_time = start_time + synthesis
-            while (start_time < end_time):
-                duration = (scan_length + start_time)*3600
-                sm.observe('%02d'%fid,'%02d'%ddid,
-                           starttime='%ds'%(start_time*3600),
-                           stoptime='%ds'%(duration))
-                me.doframe(ref_time)
-                me.doframe(obs_pos)
-                #hadec = me.direction('hadec',qa.time('%fs'%(duration/2))[0],dec)
-                #azel = me.measure(hadec,'azel')
-                sm.setdata(msselect='SCAN_NUMBER==%d && DATA_DESC_ID==%d && FIELD_ID==%d'%(scan,ddid,fid))
-                start_time += scan_length
-                scan += 1
-#        if noise: 
-#            sm.setnoise(mode='simplenoise',simplenoise=noise)
-    sm.done()
-    print 'DONE: simms.py succeeded. MS is at %s'%msname
+
+    start_times = map(str,np.arange(start_time,scan_length-start_time,scan_length)*3600)
+    stop_times = map(str,np.arange(start_time,scan_length-start_time,scan_length)*3600 + scan_length*3600)
+    for ddid in range(nbands):
+        for start,stop in zip(start_times,stop_times):
+            sm.observemany(['%02d'%fid for fid in range(nfields)],'%02d'%ddid,
+                           starttimes=[start]*nfields,stoptimes=[stop]*nfields)
+            me.doframe(ref_time)
+            me.doframe(obs_pos)
+
+    if sm.done():
+        print 'DONE: simms.py succeeded. MS is at %s'%msname
+    else:
+         raise RuntimeError('Failed to create MS. Check log file, and '
+                            'double check you settings. If you feel this '
+                            'is due a to bug, raise an issue on https://github.com/SpheMakh/simms')
     return msname
-#makems(pos='meerkat.txt',tel='MeerKAT',label='MeerKAT64',pos_type='ascii',nchan=10,hours=8,dtime=60,start_time=-2)

@@ -1,4 +1,6 @@
 #!/usr/bin/env python
+## sphe sphemakh@gmail.com
+
 import os
 import sys
 import subprocess
@@ -6,31 +8,79 @@ from argparse import ArgumentParser
 import time
 import tempfile
 import numpy as np
+from pyrap.measures import measures
+dm = measures()
 
 # set simms directory
 simms_path = os.path.realpath(__file__)
 simms_path = os.path.dirname(simms_path)
 
+# Communication functions
+def info(string):
+    t = "%d/%d/%d %d:%d:%d"%(time.localtime()[:6])
+    print "%s ##INFO: %s"%(t,string)
+def warn(string):
+    t = "%d/%d/%d %d:%d:%d"%(time.localtime()[:6])
+    print "%s ##WARNING: %s"%(t,string)
+def abort(string):
+    t = "%d/%d/%d %d:%d:%d"%(time.localtime()[:6])
+    raise SystemExit("%s ##ABORTING: %s"%(t,string))
+
+
 def simms(msname=None,label=None,tel=None,pos=None,pos_type='casa',
           ra='0h0m0s',dec='-30d0m0s',synthesis=4,scan_length=4,dtime=10,freq0=700e6,
           dfreq=50e6,nchan=1,stokes='LL LR RL RR',start_time=-2,setlimits=False,
           elevation_limit=0,shadow_limit=0,outdir='.',nolog=False,
-          coords='itrf',lon_lat=None,noup=False,nbands=1,direction=[]):
-    """ Make simulated measurement set """
+          coords='itrf',lon_lat=None,noup=False,nbands=1,direction=[],date=None):
 
+    """ Make simulated measurement set """
+    
+    # MS frequency set up
+    def toList(string,delimiter=',',f0=False):
+        if isinstance(string,str) and string.find(delimiter)>0:
+            return string.split(delimiter)
+        else:
+            if f0 and nbands>1:
+                freq = dm.frequency('rest',str(string))['m0']['value']
+                _f0 = [freq]
+                info('Start frequency for band 0 is %.4g GHz'%(freq/1e9))
+                for i in range(1,nbands):
+                    df = dm.frequency('rest',str(dfreq[i-1]))['m0']['value']
+                    _f0.append(_f0[i-1]+nchan[i-1]*df)
+                    info('Start frequency for band %d is %.4g GHz'%(i,_f0[i]/1e9))
+                return _f0
+            return [string]*nbands
+    
+    # The order of  nchan,dfreq,freq0 should not be changed below.
+    nchan = map(int, toList(nchan) )
+    dfreq = toList(dfreq)
+    freq0 = toList(freq0,f0=True)
+    
+    for item in 'freq0 dfreq nchan'.split():
+        val = locals()[item]
+        NN = len(val)
+        if NN!=nbands :
+            raise ValueError('Size of %s does not match nbands'%item)
+
+    if direction in [None,[],()]:
+        direction = ','.join(['J2000',ra,dec])
     if isinstance(direction,str):
         direction = [direction]
+
+    if date is None:
+        date = '%d/%d/%d'%(time.localtime()[:3])
+
     casa_script = tempfile.NamedTemporaryFile(suffix='.py')
     casa_script.write('# Auto Gen casapy script. From simms.py\n')
     casa_script.write('execfile("%s/casasm.py")\n'%simms_path)
 
     fmt = 'msname="%(msname)s", label="%(label)s", tel="%(tel)s", pos="%(pos)s", '\
-          'pos_type="%(pos_type)s", ra="%(ra)s", dec="%(dec)s", synthesis=%(synthesis).4g, '\
-          'scan_length=%(scan_length).4g, dtime="%(dtime)s", freq0="%(freq0)s", dfreq="%(dfreq)s", '\
-          'nchan=%(nchan)d, stokes="%(stokes)s", start_time=%(start_time).4g, setlimits=%(setlimits)s, '\
+          'pos_type="%(pos_type)s", synthesis=%(synthesis).4g, '\
+          'scan_length=%(scan_length).4g, dtime="%(dtime)s", freq0=%(freq0)s, dfreq=%(dfreq)s, '\
+          'nchan=%(nchan)s, stokes="%(stokes)s", start_time=%(start_time).4g, setlimits=%(setlimits)s, '\
           'elevation_limit=%(elevation_limit)f, shadow_limit=%(shadow_limit)f, '\
           'coords="%(coords)s",lon_lat=%(lon_lat)s, noup=%(noup)s, nbands=%(nbands)d, '\
-          'direction=%(direction)s, outdir="%(outdir)s"'%locals()
+          'direction=%(direction)s, outdir="%(outdir)s",date="%(date)s"'%locals()
     casa_script.write('makems(%s)\nexit'%fmt)
     casa_script.flush()
 
@@ -46,7 +96,7 @@ def simms(msname=None,label=None,tel=None,pos=None,pos_type='casa',
         out,err = process.comunicate()
         sys.stdout.write(out)
         sys.stderr.write(err)
-        out = None;
+        out = None
     else:
         process.wait()
     if process.returncode:
@@ -58,8 +108,12 @@ def simms(msname=None,label=None,tel=None,pos=None,pos_type='casa',
 
 if __name__=='__main__':
 
+    __version_info__ = (0,1,0)
+    __version__ = ".".join( map(str,__version_info__) )
+
     for i, arg in enumerate(sys.argv):
         if (arg[0] == '-') and arg[1].isdigit(): sys.argv[i] = ' ' + arg
+
     parser = ArgumentParser(description='Uses the CASA simulate tool to create '
             'an empty measurement set. Requires either an antenna table (CASA table) '
             'or a list of ITRF or ENU positions. '  
@@ -68,8 +122,8 @@ if __name__=='__main__':
             'NOTE: In the case of ENU, the 3rd position (up) is not essential '
             'and may not be specified; indicate that your file doesn\'t have this '
             'dimension by enebaling the --noup (-nu) option.')
-
     add = parser.add_argument
+    add("-v","--version", action='version',version='%s version %s'%(parser.prog,__version__))
     add('pos',help='Antenna positions')
     add('-t','--type',dest='type',default='casa',choices=['casa','ascii'],
             help='position list type : dafault is casa')
@@ -110,16 +164,23 @@ if __name__=='__main__':
     add('-ih','--init-ha',dest='init_ha',default=None,type=float,
             help='Initial hour angle for observation. If not specified '
                  'we use -[scan_length/2]')
-    add('-nc','--nchan',dest='nchan',default=1,type=int,
-            help='Number of frequency channels : default is 1')
+    add('-nc','--nchan',dest='nchan',default='1',
+            help='Number of frequency channels. Specify as comma separated list ' 
+                 ' (for multiple subbands); see also --freq0, --dfreq: default is 1')
     add('-f0','--freq0',dest='freq0',default='700MHz',
-            help='Start frequency. Specify as val[unit]. E.g 700MHz, not unit => Hz : default is 700MHz')
+            help='Start frequency. Specify as val[unit]. E.g 700MHz, not unit => Hz .'
+                 ' Use a comma seperated list for multiple start frequencies ' 
+                 '(for multiple subbands); see also --nchan, --dfreq: default is 700MHz')
     add('-df','--dfreq',dest='dfreq',default='50MHz',
-            help='Channel width. Specify as val[unit]. E.g 700MHz, not unit => Hz : default is 50MHz')
+            help='Channel width. Specify as val[unit]. E.g 700MHz, not unit => Hz '
+                 'Use a comma separated list of channel widths (for multiple subbands);'
+                 ' see also --nchan, --freq0 : default is 50MHz')
     add('-nb','--nband',dest='nband',default=1,type=int,
             help='Number of subbands : default is 1')
     add('-pl','--pol',dest='pol',default='LL LR RL RR',
             help='Polarization : default is LL LR RL RR')
+    add('-date','--date',dest='date',
+            help='Date of observation : default is today')
     add('-stl','--set-limits',dest='set_limits',action='store_true',
             help='Set telescope limits; elevation and shadow limts : not the default')
     add('-el','--elevation-limit',dest='elevation_limit',type=float,default=0,
@@ -135,10 +196,10 @@ if __name__=='__main__':
 #    if args.name:
 #        args.name = '"%s"'%(args.name)
 
-    for item in 'freq0','dfreq':
-        try: 
-            setattr(args,item,float(getattr(args,item)))
-        except ValueError:  "do nothing"
+#    for item in 'freq0','dfreq':
+#        try: 
+#            setattr(args,item,float(getattr(args,item)))
+#        except ValueError:  "do nothing"
 
     simms(msname=args.name,label=args.label,tel=args.tel,pos=args.pos,
           pos_type=args.type,ra=args.ra,dec=args.dec,synthesis=args.synthesis,scan_length=args.scan_length,
@@ -146,4 +207,4 @@ if __name__=='__main__':
           stokes=args.pol,start_time=args.init_ha,setlimits=args.set_limits,
           elevation_limit=args.elevation_limit,shadow_limit=args.shadow_limit,
           outdir=args.outdir,coords=args.coords,lon_lat=args.lon_lat,noup=args.noup,
-          direction=args.direction,nbands=args.nband)
+          direction=args.direction,nbands=args.nband,date=args.date)

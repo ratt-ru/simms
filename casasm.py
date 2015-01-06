@@ -138,7 +138,8 @@ def makems(msname=None,label=None,tel='MeerKAT',pos=None,pos_type='CASA',
 
     nfields = len(direction)
     for fid,field in enumerate(direction):
-        sm.setfield(sourcename='%02d'%fid,sourcedirection=field)
+        field = field.split(',')
+        sm.setfield(sourcename='%02d'%fid,sourcedirection=me.direction(*field))
 
     sm.settimes(integrationtime = dtime,
                 usehourangle = True,
@@ -148,19 +149,21 @@ def makems(msname=None,label=None,tel='MeerKAT',pos=None,pos_type='CASA',
         sm.setlimits(shadowlimit=shadow_limit,elevationlimit=elevation_limit)
     sm.setauto(autocorrwt=0.0)
 
-    start_times = map(str,np.arange(start_time,scan_length-start_time,scan_length)*3600)
-    stop_times = map(str,np.arange(start_time,scan_length-start_time,scan_length)*3600 + scan_length*3600)
+    start_times = map(str,np.arange(start_time,synthesis+start_time,scan_length)*3600)
+    stop_times = map(str,np.arange(start_time,synthesis+start_time,scan_length)*3600 + scan_length*3600)
+
     for ddid in range(nbands):
         for start,stop in zip(start_times,stop_times):
-            sm.observemany(['%02d'%fid for fid in range(nfields)],'%02d'%ddid,
-                           starttimes=[start]*nfields,stoptimes=[stop]*nfields)
-            me.doframe(ref_time)
-            me.doframe(obs_pos)
+            for fid in range(nfields):
+                sm.observe('%02d'%fid,'%02d'%ddid,
+                               starttime=start,stoptime=stop)
+                me.doframe(ref_time)
+                me.doframe(obs_pos)
 
     if sm.done():
         print 'DONE: simms.py succeeded. MS is at %s'%msname
     else:
-         raise RuntimeError('Failed to create MS. Check log file, and '
-                            'double check you settings. If you feel this '
+         raise RuntimeError('Failed to create MS. Look at the log file. '
+                            'Double check you settings. If you feel this '
                             'is due a to bug, raise an issue on https://github.com/SpheMakh/simms')
     return msname

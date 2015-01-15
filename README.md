@@ -9,6 +9,15 @@ CASA http://casa.nrao.edu/casa_obtaining.shtml and numpy
 
 ./simms.py --help should be helpful ;)
 
+Install 
+---
+`$ git clone https://github.com/SpheMakh/simms `  
+then add the following to your .bashrc file:   
+`export PATH=$PATH:path_to_simms_dir/bin`  
+`export PYTHONPATH=$PYTHONPATH:path_to_simms`
+
+source .bashrc and you are good to go.
+
 Examples
 ------
 ./simms.py -T meerkat -t casa -l test -dec -30d0m0s -ra 0h0m0s -st 8 -sl 4 -dt 60 -ih -2 -f0 700MHz -nc 4 -df 10MHz MeerKAT64_ANTENNAS

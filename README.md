@@ -14,7 +14,7 @@ Install
 `$ git clone https://github.com/SpheMakh/simms `  
 then add the following to your .bashrc file:   
 `export PATH=$PATH:path_to_simms_dir/bin`  
-`export PYTHONPATH=$PYTHONPATH:path_to_simms`
+`export PYTHONPATH=$PYTHONPATH:path_to_simms_dir`
 
 source .bashrc and you are good to go.
 

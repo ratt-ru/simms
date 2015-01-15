@@ -4,12 +4,21 @@
 import os
 import sys
 import subprocess
-from argparse import ArgumentParser
+import argparse
 import time
 import tempfile
 import numpy as np
 from pyrap.measures import measures
 dm = measures()
+
+# I want to replace error() in argparse.ArgumentParser class
+# I do this so I can catch the exception raised when too few arguments
+# are parsed. 
+class ParserError(Exception): 
+    pass
+class ArgumentParser(argparse.ArgumentParser):
+    def error(self, message):
+        raise ParserError(message or 'Not enough Arguments')
 
 # set simms directory
 simms_path = os.path.realpath(__file__)
@@ -31,7 +40,8 @@ def simms(msname=None,label=None,tel=None,pos=None,pos_type='casa',
           ra='0h0m0s',dec='-30d0m0s',synthesis=4,scan_length=4,dtime=10,freq0=700e6,
           dfreq=50e6,nchan=1,stokes='LL LR RL RR',start_time=-2,setlimits=False,
           elevation_limit=0,shadow_limit=0,outdir='.',nolog=False,
-          coords='itrf',lon_lat=None,noup=False,nbands=1,direction=[],date=None):
+          coords='itrf',lon_lat=None,noup=False,nbands=1,direction=[],date=None,
+          fromknown=False):
 
     """ Make simulated measurement set """
     
@@ -80,7 +90,7 @@ def simms(msname=None,label=None,tel=None,pos=None,pos_type='casa',
           'nchan=%(nchan)s, stokes="%(stokes)s", start_time=%(start_time).4g, setlimits=%(setlimits)s, '\
           'elevation_limit=%(elevation_limit)f, shadow_limit=%(shadow_limit)f, '\
           'coords="%(coords)s",lon_lat=%(lon_lat)s, noup=%(noup)s, nbands=%(nbands)d, '\
-          'direction=%(direction)s, outdir="%(outdir)s",date="%(date)s"'%locals()
+          'direction=%(direction)s, outdir="%(outdir)s",date="%(date)s",fromknown=%(fromknown)s'%locals()
     casa_script.write('makems(%s)\nexit'%fmt)
     casa_script.flush()
 
@@ -93,7 +103,7 @@ def simms(msname=None,label=None,tel=None,pos=None,pos_type='casa',
                   shell=True)
 
     if process.stdout or process.stderr:
-        out,err = process.comunicate()
+        out,err = process.communicate()
         sys.stdout.write(out)
         sys.stderr.write(err)
         out = None
@@ -124,6 +134,9 @@ if __name__=='__main__':
             'dimension by enebaling the --noup (-nu) option.')
     add = parser.add_argument
     add("-v","--version", action='version',version='%s version %s'%(parser.prog,__version__))
+    add('-ukc','--use-known-config',dest='knownconfig',action='store_true',
+            help='Use known antenna configuration. For some reason sm.setknownconfig() '
+            'is not working. So this option does not work as yet.')
     add('pos',help='Antenna positions')
     add('-t','--type',dest='type',default='casa',choices=['casa','ascii'],
             help='position list type : dafault is casa')
@@ -190,16 +203,14 @@ if __name__=='__main__':
     add('-ng','--nolog',dest='nolog',action='store_true',
             help='Don\'t keep Log file : not the default')
 
-    args = parser.parse_args()
+    try:
+        args = parser.parse_args()
+    except ParserError: 
+        args = parser.parse_args(args=sys.argv)
+        print args
+        
     if not args.tel:
         parser.error('Telescope name (--tel ot -T) is required')
-#    if args.name:
-#        args.name = '"%s"'%(args.name)
-
-#    for item in 'freq0','dfreq':
-#        try: 
-#            setattr(args,item,float(getattr(args,item)))
-#        except ValueError:  "do nothing"
 
     simms(msname=args.name,label=args.label,tel=args.tel,pos=args.pos,
           pos_type=args.type,ra=args.ra,dec=args.dec,synthesis=args.synthesis,scan_length=args.scan_length,
@@ -207,4 +218,4 @@ if __name__=='__main__':
           stokes=args.pol,start_time=args.init_ha,setlimits=args.set_limits,
           elevation_limit=args.elevation_limit,shadow_limit=args.shadow_limit,
           outdir=args.outdir,coords=args.coords,lon_lat=args.lon_lat,noup=args.noup,
-          direction=args.direction,nbands=args.nband,date=args.date)
+          direction=args.direction,nbands=args.nband,date=args.date,fromknown=args.knownconfig)

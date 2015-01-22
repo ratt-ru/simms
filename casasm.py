@@ -34,6 +34,7 @@ def enu2xyz (refpos_wgs84,enu):
 
 
 def makems(msname=None,label=None,tel='MeerKAT',pos=None,pos_type='CASA',
+           fromknown=False,
            direction=[],
            synthesis=4,
            scan_length=4,dtime=10,
@@ -52,19 +53,20 @@ def makems(msname=None,label=None,tel='MeerKAT',pos=None,pos_type='CASA',
            noup=False):
     """ Creates an empty measurement set using CASA simulate (sm) tool. """
 
+    # The price you pay for allowing both string and float values for the same options
+    def toFloat(val):
+        try: return float(val)
+        except TypeError: return val
+
     # sanity check/correction
     if scan_length > synthesis:
         print 'SIMMS ## WARN: Scan length > synthesis time, setiing scan_length=syntheis'
         scan_length = synthesis
-    start_time = start_time or -scan_length/2
+    start_time = toFloat(start_time) or -scan_length/2
  
     if not isinstance(dtime,str):
         dtime = '%ds'%dtime
  
-    # The price you pay for allowing both string and float values for the same options
-    def toFloat(val):
-        try: return float(val)
-        except ValueError: return val
     
     stokes = 'LL LR RL RR'
     if msname.lower().strip()=='none': 
@@ -86,36 +88,52 @@ def makems(msname=None,label=None,tel='MeerKAT',pos=None,pos_type='CASA',
             obs_pos = me.position('wgs84',lon,lat,el)
     obs_pos = obs_pos or me.observatory(tel)
 
-    if pos_type.lower() == 'casa':
-        tb.open(pos)
-        (xx,yy,zz),dish_diam,station,mount = get_int_data(tb)
-        tb.close()
-    
-    elif pos_type.lower() == 'ascii':
-        if noup: 
-            names = ['x','y','dd','station','mount']
-            ncols = 5
-        else:
-            names = ['x','y','z','dd','station','mount']
-            ncols = 6
-        dtype = ['float']*ncols
-        dtype[-2:] = ['|S20']*2
-        pos = np.genfromtxt(pos,names=names,dtype=dtype,usecols=range(ncols))
-        
-        if coords is 'enu':
-            if noup:
-                xyz = np.array([pos['x'],pos['y']]).T
-            else:
-                xyz = np.array([pos['x'],pos['y'],pos['z']]).T
-            xyz = enu2xyz(obs_pos,xyz)
-            xx,yy,zz = xyz[:,0], xyz[:,1],xyz[:,2]
-        else:
-            xx,yy,zz = pos['x'],pos['y'],pos['z']
-
-        dish_diam,station,mount = pos['dd'],pos['station'],pos['mount']
-        
     sm.open(msname)
+
+    if fromknown:
+        sm.setknownconfig('ATCA6.0A')
+    elif pos:
+        if pos_type.lower() == 'casa':
+            tb.open(pos)
+            (xx,yy,zz),dish_diam,station,mount = get_int_data(tb)
+            tb.close()
+        
+        elif pos_type.lower() == 'ascii':
+            if noup: 
+                names = ['x','y','dd','station','mount']
+                ncols = 5
+            else:
+                names = ['x','y','z','dd','station','mount']
+                ncols = 6
+            dtype = ['float']*ncols
+            dtype[-2:] = ['|S20']*2
+            pos = np.genfromtxt(pos,names=names,dtype=dtype,usecols=range(ncols))
+            
+            if coords is 'enu':
+                if noup:
+                    xyz = np.array([pos['x'],pos['y']]).T
+                else:
+                    xyz = np.array([pos['x'],pos['y'],pos['z']]).T
+                xyz = enu2xyz(obs_pos,xyz)
+                xx,yy,zz = xyz[:,0], xyz[:,1],xyz[:,2]
+            else:
+                xx,yy,zz = pos['x'],pos['y'],pos['z']
+
+            dish_diam,station,mount = pos['dd'],pos['station'],pos['mount']
+        sm.setconfig(telescopename=tel,
+                     x=xx,
+                     y=yy,
+                     z=zz,
+                     dishdiameter=dish_diam,
+                     mount=mount[0],
+                     coordsystem='global',
+                     referencelocation=obs_pos)
+
+    else:
+        raise RuntimeError('Observatory name is not known, please provide antenna configuration') 
+        
     ref_time = me.epoch('IAT',date or '2015/01/01')
+    sm.setfeed(mode='perfect X Y')
    
     for i,(freq,df,nc) in enumerate( zip(freq0,dfreq,nchan) ): 
         sm.setspwindow(spwname = '%02d'%i,
@@ -125,16 +143,6 @@ def makems(msname=None,label=None,tel='MeerKAT',pos=None,pos_type='CASA',
                    nchannels = nc,
                    stokes= stokes)
 
-    sm.setconfig(telescopename = tel,
-                 x = xx,
-                 y = yy,
-                 z = zz,
-                 dishdiameter = dish_diam,
-                 mount = mount[0],
-                 coordsystem = 'global',
-                 referencelocation = obs_pos)
-
-    sm.setfeed(mode='perfect X Y')
 
     nfields = len(direction)
     for fid,field in enumerate(direction):

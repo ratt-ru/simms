@@ -87,7 +87,7 @@ def simms(msname=None,label=None,tel=None,pos=None,pos_type='casa',
     fmt = 'msname="%(msname)s", label="%(label)s", tel="%(tel)s", pos="%(pos)s", '\
           'pos_type="%(pos_type)s", synthesis=%(synthesis).4g, '\
           'scan_length=%(scan_length).4g, dtime="%(dtime)s", freq0=%(freq0)s, dfreq=%(dfreq)s, '\
-          'nchan=%(nchan)s, stokes="%(stokes)s", start_time=%(start_time).4g, setlimits=%(setlimits)s, '\
+          'nchan=%(nchan)s, stokes="%(stokes)s", start_time=%(start_time)s, setlimits=%(setlimits)s, '\
           'elevation_limit=%(elevation_limit)f, shadow_limit=%(shadow_limit)f, '\
           'coords="%(coords)s",lon_lat=%(lon_lat)s, noup=%(noup)s, nbands=%(nbands)d, '\
           'direction=%(direction)s, outdir="%(outdir)s",date="%(date)s",fromknown=%(fromknown)s'%locals()
@@ -174,7 +174,7 @@ if __name__=='__main__':
                   ' smaller than this, in which case this is set to the sysntheis time')
     add('-dt','--dtime',dest='dtime',default=10,type=int,
             help='Integration time in seconds : default is 10s')
-    add('-ih','--init-ha',dest='init_ha',default=None,type=float,
+    add('-ih','--init-ha',dest='init_ha',default=None,
             help='Initial hour angle for observation. If not specified '
                  'we use -[scan_length/2]')
     add('-nc','--nchan',dest='nchan',default='1',

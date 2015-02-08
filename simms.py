@@ -47,6 +47,8 @@ def simms(msname=None,label=None,tel=None,pos=None,pos_type='casa',
     
     # MS frequency set up
     def toList(string,delimiter=',',f0=False):
+        if isinstance(string,(list,tuple)):
+            return string
         if isinstance(string,str) and string.find(delimiter)>0:
             return string.split(delimiter)
         else:

@@ -171,9 +171,8 @@ if __name__=='__main__':
             help='Declination in dms or val[unit]: default is -30d0m0s')
     add('-st','--synthesis-time',dest='synthesis',default=4,type=float,
             help='Synthesis time in hours: default is 4.0')
-    add('-sl','--scan-length',dest='scan_length',default=4,type=float,
-            help='Synthesis time in hours: default is 4.0 unless syntheis time is'
-                  ' smaller than this, in which case this is set to the sysntheis time')
+    add('-sl','--scan-length',dest='scan_length',type=float,default=0,
+            help='Synthesis time in hours: default is the sysntheis time')
     add('-dt','--dtime',dest='dtime',default=10,type=int,
             help='Integration time in seconds : default is 10s')
     add('-ih','--init-ha',dest='init_ha',default=None,

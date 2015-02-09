@@ -37,7 +37,7 @@ def makems(msname=None,label=None,tel='MeerKAT',pos=None,pos_type='CASA',
            fromknown=False,
            direction=[],
            synthesis=4,
-           scan_length=4,dtime=10,
+           scan_length=0,dtime=10,
            freq0=700e6,dfreq=50e6,nchan=1,
            nbands=1,
            start_time=None,
@@ -59,8 +59,8 @@ def makems(msname=None,label=None,tel='MeerKAT',pos=None,pos_type='CASA',
         except TypeError: return val
 
     # sanity check/correction
-    if scan_length > synthesis:
-        print 'SIMMS ## WARN: Scan length > synthesis time, setiing scan_length=syntheis'
+    if scan_length > synthesis or scan_length is 0:
+        print 'SIMMS ## WARN: Scan length > synthesis time or its not set, setiing scan_length=syntheis'
         scan_length = synthesis
     start_time = toFloat(start_time) or -scan_length/2
  

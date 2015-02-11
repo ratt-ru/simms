@@ -7,6 +7,7 @@ import subprocess
 import argparse
 import time
 import tempfile
+import glob
 import numpy as np
 from pyrap.measures import measures
 dm = measures()
@@ -97,7 +98,7 @@ def simms(msname=None,label=None,tel=None,pos=None,pos_type='casa',
     casa_script.flush()
 
     tmpfile = casa_script.name
-    casa_log_time_stamp = "%d%02d%02d-%02d%02d"%(time.gmtime()[:5])
+    t0 = time.time()
     process = subprocess.Popen(['casapy --nologger --log2term %s -c %s'%('--nologfile'\
                   if nolog else '--logfile log-simms.txt',repr(tmpfile))],
                   stderr=subprocess.PIPE if not isinstance(sys.stderr,file) else sys.stderr,
@@ -115,7 +116,9 @@ def simms(msname=None,label=None,tel=None,pos=None,pos_type='casa',
         print 'ERROR: simms.py returns errr code %d'%(process.returncode)
 
     casa_script.close()
-    os.system('rm -f ipython-%s*.log '%casa_log_time_stamp)
+    for log in glob.glob("ipython-*.log"):
+        if os.path.getmtime(log)>t0:
+            os.system("rm -f %s"%log)
     return msname
 
 if __name__=='__main__':

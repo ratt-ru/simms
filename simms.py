@@ -83,6 +83,9 @@ def simms(msname=None,label=None,tel=None,pos=None,pos_type='casa',
     if date is None:
         date = '%d/%d/%d'%(time.localtime()[:3])
 
+    if msname is None:
+        msname = '%s/%s_%dh%s.MS'%(outdir,label or tel,synthesis,dtime)
+
     casa_script = tempfile.NamedTemporaryFile(suffix='.py')
     casa_script.write('# Auto Gen casapy script. From simms.py\n')
     casa_script.write('execfile("%s/casasm.py")\n'%simms_path)
@@ -99,6 +102,11 @@ def simms(msname=None,label=None,tel=None,pos=None,pos_type='casa',
 
     tmpfile = casa_script.name
     t0 = time.time()
+    # Log the simms command that invoked simms and add a time stamp
+    with open('log-simms.txt','a') as std:
+        ts = '%d/%d/%d  %d:%d:%d'%(time.localtime()[:6])
+        ran = " ".join(map(str,sys.argv))
+        std.write('\n %s ::: %s\n'%(ts,ran))
     process = subprocess.Popen(['casapy --nologger --log2term %s -c %s'%('--nologfile'\
                   if nolog else '--logfile log-simms.txt',repr(tmpfile))],
                   stderr=subprocess.PIPE if not isinstance(sys.stderr,file) else sys.stderr,

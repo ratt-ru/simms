@@ -46,7 +46,7 @@ def makems(msname=None,label=None,tel='MeerKAT',pos=None,pos_type='CASA',
            setlimits=False,
            elevation_limit=None,
            shadow_limit=None,
-           outdir='.',
+           outdir=None,
            coords='itrf',           
            lon_lat=None,
            date=None,
@@ -73,7 +73,9 @@ def makems(msname=None,label=None,tel='MeerKAT',pos=None,pos_type='CASA',
         msname = None
     #TODO: DO The above check for all other variables whch do not have defaults
     if msname is None:
-        msname = '%s/%s_%dh%s.MS'%(outdir,label or tel,synthesis,dtime)
+        msname = '%s_%dh%s.MS'%(label or tel,synthesis,dtime)
+    if outdir not in [None,'None','.']:
+        msname = '%s/%s'%(outdir,msname)
 
     obs_pos = None
     lon,lat = None,None

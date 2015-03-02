@@ -40,12 +40,12 @@ def abort(string):
 def simms(msname=None,label=None,tel=None,pos=None,pos_type='casa',
           ra='0h0m0s',dec='-30d0m0s',synthesis=4,scan_length=4,dtime=10,freq0=700e6,
           dfreq=50e6,nchan=1,stokes='LL LR RL RR',start_time=-2,setlimits=False,
-          elevation_limit=0,shadow_limit=0,outdir='.',nolog=False,
+          elevation_limit=0,shadow_limit=0,outdir=None,nolog=False,
           coords='itrf',lon_lat=None,noup=False,nbands=1,direction=[],date=None,
           fromknown=False):
 
     """ Make simulated measurement set """
-    
+
     # MS frequency set up
     def toList(string,delimiter=',',f0=False):
         if isinstance(string,(list,tuple)):
@@ -84,11 +84,20 @@ def simms(msname=None,label=None,tel=None,pos=None,pos_type='casa',
         date = '%d/%d/%d'%(time.localtime()[:3])
 
     if msname is None:
-        msname = '%s/%s_%dh%s.MS'%(outdir,label or tel,synthesis,dtime)
+        msname = '%s_%dh%s.MS'%(label or tel,synthesis,dtime)
+    if outdir not in [None,'.']:
+        msname = '%s/%s'%(outdir,msname)
+        outdir = None
+
+    cdir = os.path.realpath('.')
 
     casa_script = tempfile.NamedTemporaryFile(suffix='.py')
-    casa_script.write('# Auto Gen casapy script. From simms.py\n')
-    casa_script.write('execfile("%s/casasm.py")\n'%simms_path)
+    casa_script.write("""
+# Auto Gen casapy script. From simms.py
+import os
+os.chdir('%s')
+execfile('%s/casasm.py')
+"""%(cdir,simms_path) )
 
     fmt = 'msname="%(msname)s", label="%(label)s", tel="%(tel)s", pos="%(pos)s", '\
           'pos_type="%(pos_type)s", synthesis=%(synthesis).4g, '\
@@ -102,13 +111,11 @@ def simms(msname=None,label=None,tel=None,pos=None,pos_type='casa',
 
     tmpfile = casa_script.name
     t0 = time.time()
-    # Log the simms command that invoked simms and add a time stamp
-    with open('log-simms.txt','a') as std:
-        ts = '%d/%d/%d  %d:%d:%d'%(time.localtime()[:6])
-        ran = " ".join(map(str,sys.argv))
-        std.write('\n %s ::: %s\n'%(ts,ran))
-    process = subprocess.Popen(['casapy --nologger --log2term %s -c %s'%('--nologfile'\
-                  if nolog else '--logfile log-simms.txt',repr(tmpfile))],
+    logfile = 'log-simms.txt'
+    command = ['casapy', '--nologger', '--log2term', 
+                  '%s'%('--nologfile' if nolog else '--logfile %s'%logfile),'-c',tmpfile]
+    tmpdir = tempfile.mkdtemp(dir='.')
+    process = subprocess.Popen("cd %s && "%tmpdir+" ".join(command),
                   stderr=subprocess.PIPE if not isinstance(sys.stderr,file) else sys.stderr,
                   stdout=subprocess.PIPE if not isinstance(sys.stdout,file) else sys.stdout,
                   shell=True)
@@ -124,9 +131,23 @@ def simms(msname=None,label=None,tel=None,pos=None,pos_type='casa',
         print 'ERROR: simms.py returns errr code %d'%(process.returncode)
 
     casa_script.close()
+    os.system('mv %s/%s . && rm -fr %s'%(tmpdir,logfile,tmpdir) )
     for log in glob.glob("ipython-*.log"):
         if os.path.getmtime(log)>t0:
             os.system("rm -f %s"%log)
+    
+    if nolog:
+        for log in glob.glob("casapy*.log"):
+            if os.path.getmtime(log)>t0:
+                os.system("rm -f %s"%log)
+
+    # Log the simms command that invoked simms and add a time stamp
+    if not nolog:
+        with open(logfile,'a') as std:
+            ts = '%d/%d/%d  %d:%d:%d'%(time.localtime()[:6])
+            ran = " ".join(map(str,sys.argv))
+            std.write('\n %s ::: %s\n%s\n'%(ts," ".join(command),ran))
+
     return msname
 
 if __name__=='__main__':

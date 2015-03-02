@@ -45,8 +45,6 @@ def simms(msname=None,label=None,tel=None,pos=None,pos_type='casa',
           fromknown=False):
 
     """ Make simulated measurement set """
-    
-    pos = os.path.realpath(pos)
 
     # MS frequency set up
     def toList(string,delimiter=',',f0=False):
@@ -90,13 +88,16 @@ def simms(msname=None,label=None,tel=None,pos=None,pos_type='casa',
     if outdir not in [None,'.']:
         msname = '%s/%s'%(outdir,msname)
         outdir = None
-    ms_base = os.path.basename(msname)
-    if msname in ['./'+ms_base,ms_base]:
-        msname = '%s/%s'%(os.path.realpath('.'),ms_base)
+
+    cdir = os.path.realpath('.')
 
     casa_script = tempfile.NamedTemporaryFile(suffix='.py')
-    casa_script.write('# Auto Gen casapy script. From simms.py\n')
-    casa_script.write('execfile("%s/casasm.py")\n'%simms_path)
+    casa_script.write("""
+# Auto Gen casapy script. From simms.py
+import os
+os.chdir('%s')
+execfile('%s/casasm.py')
+"""%(cdir,simms_path) )
 
     fmt = 'msname="%(msname)s", label="%(label)s", tel="%(tel)s", pos="%(pos)s", '\
           'pos_type="%(pos_type)s", synthesis=%(synthesis).4g, '\

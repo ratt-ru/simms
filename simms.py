@@ -37,7 +37,7 @@ def abort(string):
     raise SystemExit("%s ##ABORTING: %s"%(t,string))
 
 
-def simms(msname=None,label=None,tel=None,pos=None,pos_type='casa',
+def create_empty_ms(msname=None,label=None,tel=None,pos=None,pos_type='casa',
           ra='0h0m0s',dec='-30d0m0s',synthesis=4,scan_length=4,dtime=10,freq0=700e6,
           dfreq=50e6,nchan=1,stokes='LL LR RL RR',start_time=-2,setlimits=False,
           elevation_limit=0,shadow_limit=0,outdir=None,nolog=False,
@@ -148,6 +148,12 @@ execfile('%s/casasm.py')
             ran = " ".join(map(str,sys.argv))
             std.write('\n %s ::: %s\n%s\n'%(ts," ".join(command),ran))
 
+    return msname
+
+
+# Add this for backwards compatibilty. But naming of this function "simms" was a bit stupid.
+def simms(**kw):
+    msname = create_empty_ms(**kw)
     return msname
 
 if __name__=='__main__':

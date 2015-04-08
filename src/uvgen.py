@@ -264,8 +264,10 @@ class UVCreate(object):
         w = numpy.outer(mm[2,0],bl[:,0]) + numpy.outer(mm[2,1],bl[:,1]) + numpy.outer(mm[2,2],bl[:,2])
         
         u, v, w = [ x.flatten() for x in (u, v, w) ]
-        pylab.plot(u, v, 'b.', ms=1)
-        pylab.plot(-u, -v, 'r.', ms=1)
+        pylab.plot(u/1e3, v/1e3, 'b.', ms=1)
+        pylab.plot(-u/1e3, -v/1e3, 'r.', ms=1)
+        pylab.xlabel(' |uv| [km]')
+        pylab.ylabel(' |uv| [km]')
 
         if save:
             if not isinstance(save, str):
@@ -275,7 +277,7 @@ class UVCreate(object):
         if show:
             pylab.show()
         pylab.clf()
-        #info("Longest baseline is %f km"%(max( ((bl**2).sum(1)))**.5 /1e3))
+
         global OBSDATA
         uvmax = max( (u**2 + v**2)**0.5)
 
@@ -293,7 +295,6 @@ if __name__ == '__main__':
         if (arg[0] == '-') and arg[1].isdigit(): sys.argv[i] = ' ' + arg
 
     parser = argparse.ArgumentParser(description="Generates the uv-coverage given a list of antenna positions "
-                                     "This only reliable for RA= 0,180 degrees for now, for now. "
                                      "Sphesihle Makhathini sphemakh@gmail.com")
     add = parser.add_argument
 

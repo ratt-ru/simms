@@ -1,7 +1,7 @@
 ## uvgen.py
-Makes uv-coverage given a list of antenna positions. 
-The antenna positions may be given in either ENU or ITRF coordinates.
-This code is Based on: 
+Makes uv-coverage given a list of antenna positions.  
+The antenna positions may be given in either ENU or ITRF coordinates.  
+This code is Based on:  
 Synthesis Imaging in Radio Astronomy II, ASP conference series, Vol. 180, 1999, Ch. 2
 
 Requires
@@ -28,9 +28,11 @@ In Python
 import uvgen
 
 # initialise UVCreate instance
-uv = UVCreate(antennas=opts.antennas, direction="J2000,0,-30", tel="meerkat", coord_sys="enu")
-# Then to generate the uv-coverage for an 8hr synthesis with a 60s integration time run. 
-# The ENU to ITRF conversion is done if coord_sys='enu'. 
+uv = uvgen.UVCreate(antennas='MeerKAT.enu.txt', direction="J2000,0,-30", tel="meerkat", coord_sys="enu")
+# In this case I use the lon,lat in the CASA database because tel="meerkat" is known to CASA.
+# If using ENU coordinates, you have to specify coord_sys else ITRF will. 
+
+# To generate the uv-coverage for an 8hr synthesis with a 60s integration time run. 
 uvw = uv.itrf2uvw(h0=[-4,4], dtime=60/3600., save='uvcov-test.png', show=True)
 ```
 

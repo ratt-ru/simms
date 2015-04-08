@@ -25,6 +25,8 @@ import argparse
 PI = math.pi
 FWHM = math.sqrt( math.log(256) )
 
+OBSDATA = "uvw points generated using uvgen.py \n"
+
 # Communication functions
 def info(string):
     t = "%d/%d/%d %d:%d:%d"%(time.localtime()[:6])
@@ -116,7 +118,7 @@ class UVCreate(object):
         return xyz0,xyz
 
 
-    def start_time(self,tot,lon=None,lat=None,direction=None,date=None):
+    def source_info(self,tot,lon=None,lat=None,direction=None,date=None):
         
         dm  = pyrap.measures.measures()
 
@@ -148,8 +150,6 @@ class UVCreate(object):
         obs.date = date or "%d/%d/%d 12:0:0"%(time.localtime()[:3])
         lst = obs.sidereal_time() 
 
-        # Adjust start time in order to get a decent hour angle
-        # if date is specified, assume user knows what they are doing
         def change (angle):
             if angle > 2*PI:
                 angle -= 2*PI
@@ -159,45 +159,46 @@ class UVCreate(object):
  
         altitude_transit = lambda lat, dec: numpy.sign(lat)*(math.cos(lat)*math.sin(dec) + math.sin(lat)*math.cos(dec) )
                 
-        if date is None:
-            # First lets find the altitude at transit (hour angle = 0 or LST=RA)
-            # If this is negative, then the pointing direction is below the horizon at its peak.
-            #alt_trans = altitude_transit(lat,dec)
-            #if alt_trans < 0 :
-            #    warn(" Altitude at transit is %f deg, i.e."
-            #         " pointing center is always below the horizon!"%(numpy.rad2deg(alt_trans)))
-            #    return 0
+        # First lets find the altitude at transit (hour angle = 0 or LST=RA)
+        # If this is negative, then the pointing direction is below the horizon at its peak.
+        #alt_trans = altitude_transit(lat,dec)
+        #if alt_trans < 0 :
+        #    warn(" Altitude at transit is %f deg, i.e."
+        #         " pointing center is always below the horizon!"%(numpy.rad2deg(alt_trans)))
+        #    return 0
 
-            H0 = sunrise_equation(lat,dec)
+        altitude = altitude_transit(lat,dec)
+        H0 = sunrise_equation(lat,dec)
 
-            # Lets find transit (hour angle = 0, or LST=RA)
-            lst,ra = map(change,(lst,ra))
-            diff =  (lst - ra )/(2*PI)
-            date = obs.date
-            obs.date = date + diff
-            # LST should now be transit
-            transit = change(obs.sidereal_time())
-            if ra==0:
-                obs.date = date - lst/(2*PI)
-            elif transit-ra > .1*PI/12:
-                obs.date = date - diff
+        # Lets find transit (hour angle = 0, or LST=RA)
+        lst,ra = map(change,(lst,ra))
+        diff =  (lst - ra )/(2*PI)
 
-            # This is the start time
-            ih0 = change((obs.date)/(2*PI)%(2*PI))
-            # Account for the lower hemispheres
-            if lat<0:
-                ih0 -= PI
-            
-        return ih0
+        date = obs.date
+        obs.date = date + diff
+        # LST should now be transit
+        transit = change(obs.sidereal_time())
+        if ra==0:
+            obs.date = date - lst/(2*PI)
+        elif transit-ra > .1*PI/12:
+            obs.date = date - diff
+
+        # This is the time at transit
+        ih0 = change((obs.date)/(2*PI)%(2*PI))
+        # Account for the lower hemisphere
+        if lat<0:
+            ih0 -= PI
+            obs.date -= 0.5
+        
+        date = obs.date.datetime().ctime()
+        return ih0, date, H0, altitude
         
     
-    def itrf2uvw(self,h0, antennas=None, wavelength=None, dtime=0, direction=None, 
+    def itrf2uvw(self,h0, antennas=None, dtime=0, direction=None, 
                  lon=None, lat=None, tel=None, coord_sys=None, date=None,
                   save=None, show=False):
         """
             antennas : ITRF antenna positions (3xN)
-
-            wavelength : Wavelegnth in meters
 
             direction: Pointing direction ( specify as "epoch,RA,DEC", e.g 
                direction="J2000,0deg,-30deg)
@@ -236,8 +237,7 @@ class UVCreate(object):
 
         
         ntimes = (h0[1]-h0[0])/dtime
-        ih0 = self.start_time(ntimes*dtime, lon, lat, direction,date=date) # initial hour angle
-        warn(ih0)
+        ih0, date, H0, altitude = self.source_info(ntimes*dtime, lon, lat, direction,date=date)
         h0 = ih0 + numpy.linspace(h0[0], h0[1], ntimes)*PI/12. # convert to radians 
 
         # define matrix that transforms from ITRF (X,Y,Z) to uvw 
@@ -245,7 +245,7 @@ class UVCreate(object):
                 [numpy.sin(h0), numpy.cos(h0), 0],
                 [-math.sin(dec)*numpy.cos(h0), math.sin(dec)*numpy.sin(h0), math.cos(dec)],
                 [math.cos(dec)*numpy.cos(h0), -math.cos(dec)*numpy.sin(h0), math.sin(dec)]
-])/wavelength
+])
 
 
         # Get baselines 
@@ -269,15 +269,22 @@ class UVCreate(object):
 
         if save:
             if not isinstance(save, str):
-                save = 'uvcov-qazwsx.png'
+                save = 'uvgen-qazwsx.png'
             pylab.savefig(save)
 
         if show:
             pylab.show()
         pylab.clf()
         #info("Longest baseline is %f km"%(max( ((bl**2).sum(1)))**.5 /1e3))
-        info("Longest baseline is %f km"%(max( (u**2 + v**2)**0.5)/1e3 ) )
-        
+        global OBSDATA
+        uvmax = max( (u**2 + v**2)**0.5)
+
+        OBSDATA += """
+The pointing center is at transit at %s, at which point its altitude is %.3f degress. 
+It will be above the horizon for %.3f hours.
+The maximum baseline for this array is %.3f. km. The u,v,w points are in meters.
+"""%(date,numpy.rad2deg(altitude),2*numpy.rad2deg(H0)/15,uvmax/1e3)
+        info(OBSDATA)        
         return numpy.array((u, v, w)).T
 
 if __name__ == '__main__':
@@ -303,21 +310,18 @@ if __name__ == '__main__':
     add('-T', '--tel', 
         help='Telescope name. Specify this if your telescope is the CASA database.')
     add('-dir', '--direction', 
-        help='Pointing direction in the form "epoch,ra,dec", e.g "J2000,0deg,-30deg"'
+        help='Pointing direction in the form "reference,ra,dec", e.g "J2000,0deg,-30deg"'
              'No default. This is required')
     add('-st', '--synthesis', type=float,
         help='Synthesis time in hours'
              'No default. This is required')
     add('-dt', '--dtime', type=float,
         help='Integration time in seconds. Default is 10')
-    add('-w','--wavelength',type=float,
-        help='wavelength in meters'
-             'No default. This is required')
     add('-ST', '--start_time', 
         help='Synthesis start time in the form "yyyy/mm/dd hh:mm:ss". '
              'Advanced option: Leave it unspecified if you are not sure its for.')
-    add('-o', '--outfile', default='uvcov-qazwsx.txt',
-        help='Save uv-points here. Default is uvcov-qazwsx.txt')
+    add('-o', '--outfile', default='uvgen-qazwsx.txt',
+        help='Save uv-points here. Default is uvgen-qazwsx.txt')
     add('-sf', '--savefig',
         help='Save uv-coverage plot here')
     add('-S', '--showfig', action='store_true',
@@ -328,8 +332,7 @@ if __name__ == '__main__':
                   direction=opts.direction, tel=opts.tel, coord_sys=opts.coord_sys)
 
     ha = -opts.synthesis/2,opts.synthesis/2
-    uvw = uv.itrf2uvw(h0=ha, wavelength=opts.wavelength, dtime=opts.dtime/3600.,
+    uvw = uv.itrf2uvw(h0=ha, dtime=opts.dtime/3600.,
             date=opts.start_time, save=opts.savefig, show=opts.showfig)
-
-    numpy.savetxt(opts.outfile,uvw)
+    numpy.savetxt(opts.outfile,uvw,header=OBSDATA)
     info('FIN!')

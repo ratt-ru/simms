@@ -84,7 +84,7 @@ def create_empty_ms(msname=None,label=None,tel=None,pos=None,pos_type='casa',
         date = '%d/%d/%d'%(time.localtime()[:3])
 
     if msname is None:
-        msname = '%s_%dh%s.MS'%(label or tel,synthesis,dtime)
+        msname = '%s_%dh%ss.MS'%(label or tel,synthesis,dtime)
     if outdir not in [None,'.']:
         msname = '%s/%s'%(outdir,msname)
         outdir = None

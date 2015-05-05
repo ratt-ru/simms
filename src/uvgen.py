@@ -147,7 +147,7 @@ class UVCreate(object):
             return th_ha
         
 
-        obs.date = date or "%d/%d/%d 12:0:0"%(time.localtime()[:3])
+        obs.date = date or "%d/%d/%d 0:0:0"%(time.localtime()[:3])
         lst = obs.sidereal_time() 
 
         def change (angle):
@@ -175,15 +175,16 @@ class UVCreate(object):
         diff =  (lst - ra )/(2*PI)
 
         date = obs.date
-        obs.date = date + diff
+        obs.date = date - diff
         # LST should now be transit
         transit = change(obs.sidereal_time())
         if ra==0:
             obs.date = date - lst/(2*PI)
-        elif transit-ra > .1*PI/12:
-            obs.date = date - diff
+        elif abs((transit-ra)/ra) > .05:
+            obs.date = date + diff
 
         # This is the time at transit
+        warn(transit*1)
         ih0 = change((obs.date)/(2*PI)%(2*PI))
         # Account for the lower hemisphere
         if lat<0:

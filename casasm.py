@@ -41,7 +41,8 @@ def makems(msname=None,label=None,tel='MeerKAT',pos=None,pos_type='CASA',
            freq0=700e6,dfreq=50e6,nchan=1,
            nbands=1,
            start_time=None,
-           stokes='LL LR RL RR',
+           stokes='L R',
+           feed="perfect X Y",
            noise=0,
            setlimits=False,
            elevation_limit=None,
@@ -68,7 +69,7 @@ def makems(msname=None,label=None,tel='MeerKAT',pos=None,pos_type='CASA',
         dtime = '%ds'%dtime
  
     
-    stokes = 'LL LR RL RR'
+    #stokes = 'LL LR RL RR'
     if msname.lower().strip()=='none': 
         msname = None
     #TODO: DO The above check for all other variables whch do not have defaults
@@ -135,7 +136,7 @@ def makems(msname=None,label=None,tel='MeerKAT',pos=None,pos_type='CASA',
         raise RuntimeError('Observatory name is not known, please provide antenna configuration') 
         
     ref_time = me.epoch('IAT',date or '2015/01/01')
-    sm.setfeed(mode='perfect X Y')
+    sm.setfeed(mode=feed)
    
     for i,(freq,df,nc) in enumerate( zip(freq0,dfreq,nchan) ): 
         sm.setspwindow(spwname = '%02d'%i,

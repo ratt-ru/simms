@@ -39,7 +39,7 @@ def abort(string):
 
 def create_empty_ms(msname=None,label=None,tel=None,pos=None,pos_type='casa',
           ra='0h0m0s',dec='-30d0m0s',synthesis=4,scan_length=4,dtime=10,freq0=700e6,
-          dfreq=50e6,nchan=1,stokes='L R',start_time=-2,setlimits=False,
+          dfreq=50e6,nchan=1,stokes='RR LL',start_time=-2,setlimits=False,
           elevation_limit=0,shadow_limit=0,outdir=None,nolog=False,
           coords='itrf',lon_lat=None,noup=False,nbands=1,direction=[],date=None,
           fromknown=False,feed="perfect X Y"):
@@ -230,8 +230,8 @@ if __name__=='__main__':
                  ' see also --nchan, --freq0 : default is 50MHz')
     add('-nb','--nband',dest='nband',default=1,type=int,
             help='Number of subbands : default is 1')
-    add('-pl','--pol',dest='pol',default='LL LR RL RR',
-            help='Polarization : default is LL LR RL RR')
+    add('-pl','--pol',dest='pol',default='RR LL',
+            help='Polarization : default is RR LL')
     add('-feed','--feed',dest='feed',default='perfect X Y',
             help='Polarization : default is "perfect X Y" ')
     add('-date','--date',dest='date',

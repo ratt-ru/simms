@@ -157,7 +157,7 @@ def simms(**kw):
     msname = create_empty_ms(**kw)
     return msname
 
-if __name__=='__main__':
+def main():
 
     __version_info__ = (0,1,0)
     __version__ = ".".join( map(str,__version_info__) )

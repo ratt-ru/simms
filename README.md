@@ -11,10 +11,10 @@ CASA http://casa.nrao.edu/casa_obtaining.shtml and numpy
 
 Install 
 ---
-`$ git clone https://github.com/SpheMakh/simms `  
-then add the following to your .bashrc file:   
-`export PATH=$PATH:path_to_simms_dir/bin`  
-`export PYTHONPATH=$PYTHONPATH:path_to_simms_dir`
+```
+$ git clone https://github.com/SpheMakh/simms
+$ 
+```
 
 source .bashrc and you are good to go.
 

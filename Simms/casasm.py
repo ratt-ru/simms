@@ -172,7 +172,7 @@ def makems(msname=None,label=None,tel='MeerKAT',pos=None,pos_type='CASA',
                 me.doframe(obs_pos)
 
     if sm.done():
-        print 'DONE: simms.py succeeded. MS is at %s'%msname
+        print "Empty MS '%s' created"%msname
     else:
          raise RuntimeError('Failed to create MS. Look at the log file. '
                             'Double check you settings. If you feel this '

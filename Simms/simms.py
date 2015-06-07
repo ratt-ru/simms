@@ -10,6 +10,8 @@ import tempfile
 import glob
 import numpy as np
 from pyrap.measures import measures
+from pyrap.tables import table
+
 dm = measures()
 
 # I want to replace error() in argparse.ArgumentParser class
@@ -91,6 +93,11 @@ def create_empty_ms(msname=None,label=None,tel=None,pos=None,pos_type='casa',
 
     cdir = os.path.realpath('.')
 
+
+    mesage = "Having Trouble accessing the MS. Something went wrong while creating the MS, please check the logs.\n"\
+             "If you believe this is due to a bug in simms, please notify me via"\
+             "https://github.com/SpheMakh/simms/issues/new"
+
     casa_script = tempfile.NamedTemporaryFile(suffix='.py')
     casa_script.write("""
 # Auto Gen casapy script. From simms.py
@@ -129,7 +136,7 @@ execfile('%s/casasm.py')
     else:
         process.wait()
     if process.returncode:
-        print 'ERROR: simms.py returns errr code %d'%(process.returncode)
+        print 'ERROR: simms.py returns errr code %d. %s'%(process.returncode, message)
 
     casa_script.close()
     os.system('mv %s/%s . && rm -fr %s'%(tmpdir,logfile,tmpdir) )
@@ -149,17 +156,26 @@ execfile('%s/casasm.py')
             ran = " ".join(map(str,sys.argv))
             std.write('\n %s ::: %s\n%s\n'%(ts," ".join(command),ran))
 
+    # See if we can open and access the MS
+    info("Validating %s ..."%msname)
+    try:
+        table(msname).getcol("DATA")
+    except: 
+        abort(message)
+    
+    info("DONE!")
     return msname
 
 
 # Add this for backwards compatibilty. But naming of this function "simms" was a bit stupid.
 def simms(**kw):
+    """ See create_empty_ms() """
     msname = create_empty_ms(**kw)
     return msname
 
 def main():
 
-    __version_info__ = (0,1,0)
+    __version_info__ = (1,0,0)
     __version__ = ".".join( map(str,__version_info__) )
 
     for i, arg in enumerate(sys.argv):

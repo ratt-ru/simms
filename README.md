@@ -9,7 +9,6 @@ Requires
 pyrap ( [debian](https://launchpad.net/~ska-sa/+archive/ubuntu/main) or [general build](https://code.google.com/p/pyrap/wiki/BuildInstructions)  )
 numpy
 
-simms.py --help should be helpful ;)
 
 Install 
 ---
@@ -18,11 +17,11 @@ $ git clone https://github.com/SpheMakh/simms
 $ cd simms && sudo python setup.py install 
 ```
 
-source .bashrc and you are good to go.
-
 Examples
 ------
-The antenna positions can b specified as CASA Table or an ASCII file. Bellow is an example of you can an empty MS using both formats:
+To get farmiliar with options run: `simms --help` ;)
+
+The antenna positions can be specified as a CASA Table or an ASCII file. Bellow is an example of you can an empty MS using both formats:
 
 **NOTE**: Some antenna tables are provided in Simms/observatories. Run the examples below in the `simms` directory or change the paths of the antenna files accordingly in the lines bellow. 
 

@@ -5,9 +5,11 @@ Creates simulated measurement sets using the the CASA simulate tool.
 
 Requires
 -----
-CASA http://casa.nrao.edu/casa_obtaining.shtml and numpy
+[casapy](http://casa.nrao.edu/casa_obtaining.shtml)  
+pyrap ( [debian](https://launchpad.net/~ska-sa/+archive/ubuntu/main) or [general build](https://code.google.com/p/pyrap/wiki/BuildInstructions)  )
+numpy
 
-./simms.py --help should be helpful ;)
+simms.py --help should be helpful ;)
 
 Install 
 ---
@@ -20,8 +22,18 @@ source .bashrc and you are good to go.
 
 Examples
 ------
+The antenna positions can b specified as CASA Table or an ASCII file. Bellow is an example of you can an empty MS using both formats:
+
+**NOTE**: Some antenna tables are provided in Simms/observatories. Run the examples below in the `simms` directory or change the paths of the antenna files accordingly in the lines bellow. 
+
+* **CASA Table** `KAT7_ANTENNAS`
 ```
-simms.py -T meerkat -t casa -l test -dec -30d0m0s -ra 0h0m0s -st 8 -sl 4 -dt 60 -ih -2 -f0 700MHz -nc 4 -df 10MHz MeerKAT64_ANTENNAS
+simms -T kat-7 -t casa -l test_casa -dec -30d0m0s -ra 0h0m0s -st 1 -dt 60 -f0 1.4GHz -nc 4 -df 10MHz Simms/observatories/KAT7_ANTENNAS
 ```
 
-Creates an empty MS at 700MHz with 4 10MHz channels, the observtion is 8hrs long with 4 hours scans and a 60s integrations time. The MS is created from the MeerKAT64 CASA antenna table (which must be provided by the user)
+* **ASCII**   `vlac.enu.itrf`
+```
+ simms -T vla -t ascii -cs itrf -l test_ascii -dec 30d0m0s -ra 0h0m0s -st 1 -dt 60 -f0 1.4GHz -nc 4 -df 10MHz Simms/observatories/vlac.itrf.txt
+```
+
+In both cases, we create an empty MS (VLA-A and KAT-7) at 1400MHz with 4 10MHz channels, the observtion is 1hr and has a 60s integrations time.

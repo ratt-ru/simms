@@ -94,7 +94,7 @@ def create_empty_ms(msname=None,label=None,tel=None,pos=None,pos_type='casa',
     cdir = os.path.realpath('.')
 
 
-    mesage = "Having Trouble accessing the MS. Something went wrong while creating the MS, please check the logs.\n"\
+    message = "Having Trouble accessing the MS. Something went wrong while creating the MS, please check the logs.\n"\
              "If you believe this is due to a bug in simms, please notify me via"\
              "https://github.com/SpheMakh/simms/issues/new"
 

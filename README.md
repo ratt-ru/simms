@@ -51,5 +51,5 @@ In both cases, we create an empty MS (VLA-A and KAT-7) at 1400MHz with 4 10MHz c
 ```
 from simms import simms
 
-simms.create_empty_ms(msname="Name_of_ms.MS",observatory="kat-7", synthesis=1, pos_type='casa', pos="kat-7_antenna_table")
+simms.create_empty_ms(msname="Name_of_ms.MS", tel="kat-7", synthesis=1, pos_type='casa', pos="kat-7_antenna_table")
 ```

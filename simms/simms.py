@@ -8,10 +8,10 @@ import time
 import tempfile
 import glob
 import numpy as np
-from pyrap.measures import measures
+import pyrap.measures
 from pyrap.tables import table
 
-dm = measures()
+dm = pyrap.measures.measures()
 
 # I want to replace error() in argparse.ArgumentParser class
 # I do this so I can catch the exception raised when too few arguments
@@ -49,7 +49,34 @@ def create_empty_ms(msname=None,label=None,tel=None,pos=None,pos_type='casa',
           coords='itrf',lon_lat=None,noup=False,nbands=1,direction=[],date=None,
           fromknown=False,feed="perfect X Y"):
 
-    """ Make simulated measurement set """
+    """ 
+Uses the CASA simulate tool to create an empty measurement set. Requires
+either an antenna table (CASA table) or a list of ITRF or ENU positions. 
+
+msname: MS name
+tel: Telescope name (This name must be in the CASA Database (check in me.obslist() in casapy)
+     If its not there, then you will need to specify the telescope coordinates via "lon_lat"
+pos: Antenna positions. This can either a CASA table or an ASCII file. 
+     (see simms --help for more on using an ascii file)
+pos_type: Antenna position type. Choices are (casa, ascii)
+coords: This is only applicable if you are using an ASCII file. Choices are (itrf, enu)
+synthesis: Synthesis time in hours
+dtime: Integration time in seconds
+freq0: Start frequency 
+dfreq: Channel width
+nbands: Number of frequency bands
+**kw: extra keyword arguments.
+
+A standard file should have the format: pos1 pos2 pos3* dish_diameter station
+mount. NOTE: In the case of ENU, the 3rd position (up) is not essential and
+may not be specified; indicate that your file doesn't have this dimension by
+enebaling the --noup (-nu) option.
+    """
+
+    if tel and tel.upper() not in [ item.upper() for item in dm.obslist() ]:
+        raise ValueError("Could not Find your telescope [%s] in the CASA Database. "\
+            "Please double check the telescope name, or provide the location of "\
+            "the telescope via lon_lat (or --lon-lat-elv)"%tel)
 
     # MS frequency set up
     def toList(string,delimiter=',',f0=False):
@@ -286,3 +313,6 @@ def main():
           elevation_limit=args.elevation_limit,shadow_limit=args.shadow_limit,
           outdir=args.outdir,coords=args.coords,lon_lat=args.lon_lat,noup=args.noup,
           direction=args.direction,nbands=args.nband,date=args.date,fromknown=args.knownconfig)
+
+if __name__=="__main__":
+    main()

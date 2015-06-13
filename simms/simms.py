@@ -1,5 +1,4 @@
-#!/usr/bin/env python
-## sphe sphemakh@gmail.com
+## Sphesihle Makhathini <sphemakh@gmail.com>
 
 import os
 import sys
@@ -34,9 +33,13 @@ def info(string):
 def warn(string):
     t = "%d/%d/%d %d:%d:%d"%(time.localtime()[:6])
     print "%s ##WARNING: %s"%(t,string)
-def abort(string):
+
+def abort(string,exception=SystemExit):
     t = "%d/%d/%d %d:%d:%d"%(time.localtime()[:6])
-    raise SystemExit("%s ##ABORTING: %s"%(t,string))
+    raise exception("%s ##ABORTING: %s"%(t,string))
+
+class CasapyError(Exception):
+    pass
 
 
 def create_empty_ms(msname=None,label=None,tel=None,pos=None,pos_type='casa',
@@ -95,8 +98,8 @@ def create_empty_ms(msname=None,label=None,tel=None,pos=None,pos_type='casa',
 
 
     message = "Having Trouble accessing the MS. Something went wrong while creating the MS, please check the logs.\n"\
-             "If you believe this is due to a bug in simms, please notify me via"\
-             "https://github.com/SpheMakh/simms/issues/new"
+              "If you believe this is due to a bug in simms, please notify me via "\
+              "https://github.com/SpheMakh/simms/issues/new"
 
     casa_script = tempfile.NamedTemporaryFile(suffix='.py')
     casa_script.write("""
@@ -158,10 +161,16 @@ execfile('%s/casasm.py')
 
     # See if we can open and access the MS
     info("Validating %s ..."%msname)
+    validated = False
     try:
-        table(msname).getcol("DATA")
+        data = table(msname).getcol("DATA")
+        if data is None:
+            validated = False
+            raise CasapyError
+        else:
+            validated = True
     except: 
-        abort(message)
+        abort(message, exception=CasapyError)
     
     info("DONE!")
     return msname

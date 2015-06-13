@@ -153,6 +153,12 @@ execfile('%s/casasm.py')
     command = ['casapy', '--nologger', '--log2term', 
                   '%s'%('--nologfile' if nolog else '--logfile %s'%logfile),'-c',tmpfile]
     tmpdir = tempfile.mkdtemp(dir='.')
+
+    if os.path.exists(msname):
+        os.system("rm -fr %s"%msname)
+
+    t0 = time.time() 
+
     process = subprocess.Popen("cd %s && "%tmpdir+" ".join(command),
                   stderr=subprocess.PIPE if not isinstance(sys.stderr,file) else sys.stderr,
                   stdout=subprocess.PIPE if not isinstance(sys.stdout,file) else sys.stdout,
@@ -186,21 +192,38 @@ execfile('%s/casasm.py')
             ran = " ".join(map(str,sys.argv))
             std.write('\n %s ::: %s\n%s\n'%(ts," ".join(command),ran))
 
-    # See if we can open and access the MS
+
+    # Run a few tests on the MS, see if its valid.
     info("Validating %s ..."%msname)
     validated = False
     try:
-        data = table(msname).getcol("DATA")
+        tab = table(msname)
+        data = tab.getcol("DATA")
+        ddid = list(set( tab.getcol("DATA_DESC_ID") ))
+        fid = list(set( tab.getcol("FIELD_ID") ))
+        tab.close()
         if data is None:
+            validated = False
+            raise CasapyError
+        elif 0 not in ddid or 0 not in fid:
             validated = False
             raise CasapyError
         else:
             validated = True
-    except: 
+    except:
+        # Clean up and exit
+        for tabF in glob.glob("tab*"):
+            if os.path.isdir(tabF) and os.path.getmtime(tabF)>t0:
+                os.system("rm -fr %s"%tabF)
+        
+        os.system( "rm -fr %s %s"%(msname, tmpdir) )
         abort(message, exception=CasapyError)
     
-    info("DONE!")
-    return msname
+    if validated:
+        info("DONE!")    
+        return msname
+    else:
+        return None
 
 
 # Add this for backwards compatibilty. But naming of this function "simms" was a bit stupid.
@@ -313,6 +336,3 @@ def main():
           elevation_limit=args.elevation_limit,shadow_limit=args.shadow_limit,
           outdir=args.outdir,coords=args.coords,lon_lat=args.lon_lat,noup=args.noup,
           direction=args.direction,nbands=args.nband,date=args.date,fromknown=args.knownconfig)
-
-if __name__=="__main__":
-    main()

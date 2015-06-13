@@ -12,13 +12,22 @@ numpy
 
 Install 
 ---
+## GiHhub
 ```
 $ git clone https://github.com/SpheMakh/simms
 $ cd simms && sudo python setup.py install 
 ```
 
+## Pip
+```
+pip install simms
+```
+
+
 Examples
 ------
+
+## On the command line
 To get farmiliar with options run: `simms --help` ;)
 
 The antenna positions can be specified as a CASA Table or an ASCII file. Bellow is an example of you can an empty MS using both formats:
@@ -36,3 +45,11 @@ simms -T kat-7 -t casa -l test_casa -dec -30d0m0s -ra 0h0m0s -st 1 -dt 60 -f0 1.
 ```
 
 In both cases, we create an empty MS (VLA-A and KAT-7) at 1400MHz with 4 10MHz channels, the observtion is 1hr and has a 60s integrations time.
+
+## In PyTHON
+
+```
+from simms import simms
+
+simms.create_empty_ms(msname="Name_of_ms.MS",observatory="kat-7", synthesis=1, pos_type='casa', pos="kat-7_antenna_table")
+```

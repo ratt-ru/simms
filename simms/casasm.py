@@ -41,8 +41,8 @@ def makems(msname=None,label=None,tel='MeerKAT',pos=None,pos_type='CASA',
            freq0=700e6,dfreq=50e6,nchan=1,
            nbands=1,
            start_time=None,
-           stokes='RR LL',
-           feed="perfect X Y",
+           stokes='RR RL LR LL',
+           feed="perfect R L",
            noise=0,
            setlimits=False,
            elevation_limit=None,
@@ -134,8 +134,13 @@ def makems(msname=None,label=None,tel='MeerKAT',pos=None,pos_type='CASA',
 
     else:
         raise RuntimeError('Observatory name is not known, please provide antenna configuration') 
-        
-    ref_time = me.epoch('IAT',date or '2015/01/01')
+    
+    epoch, date = "IAT", "2015/01/01"
+    if date and len(date.split(":")) > 1:
+        epoch, date = date.split(":") 
+
+    ref_time = me.epoch(epoch,date)
+
     sm.setfeed(mode=feed)
    
     for i,(freq,df,nc) in enumerate( zip(freq0,dfreq,nchan) ): 

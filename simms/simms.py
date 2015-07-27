@@ -44,7 +44,7 @@ class CasapyError(Exception):
 
 def create_empty_ms(msname=None,label=None,tel=None,pos=None,pos_type='casa',
           ra='0h0m0s',dec='-30d0m0s',synthesis=4,scan_length=4,dtime=10,freq0=700e6,
-          dfreq=50e6,nchan=1,stokes='RR RL LR LL',start_time=-2,setlimits=False,
+          dfreq=50e6,nchan=1,stokes='XX XY YX YY',start_time=-2,setlimits=False,
           elevation_limit=0,shadow_limit=0,outdir=None,nolog=False,
           coords='itrf',lon_lat=None,noup=False,nbands=1,direction=[],date=None,
           fromknown=False,feed="perfect X Y"):
@@ -113,7 +113,7 @@ enebaling the --noup (-nu) option.
         direction = [direction]
 
     if date is None:
-        date = '%d/%d/%d'%(time.localtime()[:3])
+        date = 'IAT:%d/%d/%d'%(time.localtime()[:3])
 
     if msname is None:
         msname = '%s_%dh%ss.MS'%(label or tel,synthesis,dtime)
@@ -226,11 +226,8 @@ execfile('%s/casasm.py')
         return None
 
 
-# Add this for backwards compatibilty. But naming of this function "simms" was a bit stupid.
-def simms(**kw):
-    """ See create_empty_ms() """
-    msname = create_empty_ms(**kw)
-    return msname
+# Add this for backwards compatibilty.
+simms = create_empty_ms
 
 def main():
 
@@ -305,11 +302,11 @@ def main():
                  ' see also --nchan, --freq0 : default is 50MHz')
     add('-nb','--nband',dest='nband',default=1,type=int,
             help='Number of subbands : default is 1')
-    add('-pl','--pol',dest='pol',default='RR RL LR LL',
-            help='Polarization : default is RR RL LR LL')
+    add('-pl','--pol',dest='pol',default='XX XY YX YY',
+            help='Polarization : default is XX XY YX YY')
     add('-feed','--feed',dest='feed',default='perfect X Y',
             help='Polarization : default is "perfect X Y" ')
-    add('-date','--date',dest='date',
+    add('-date','--date',dest='date',metavar="EPOCH:yyyy/mm/dd[h/m/s]",
             help='Date of observation : default is today')
     add('-stl','--set-limits',dest='set_limits',action='store_true',
             help='Set telescope limits; elevation and shadow limts : not the default')

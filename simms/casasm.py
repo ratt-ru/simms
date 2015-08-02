@@ -17,6 +17,17 @@ def get_int_data(tab):
     return  (x,y,z),dish_diam,station,mount
 
 
+def wgs84_2xyz(pos_wgs84):
+    """ convert wgs84 to itrf """
+    
+    pos_itrf = np.zeros(pos_wgs84.shape)
+    for i,(x,y,z) in enumerate(pos_wgs84):
+        p = me.position("wgs84", "%fdeg"%x, "%fdeg"%y, "%fm"%z)
+        pos_itrf[i] = me.addxvalue( me.measure(p, "itrf"))["value"]
+
+    return pos_itrf
+    
+
 def enu2xyz (refpos_wgs84,enu):
     """ converts xyz0 + ENU (Nx3 array) into xyz """
     refpos = me.measure(refpos_wgs84,'itrf')
@@ -28,8 +39,8 @@ def enu2xyz (refpos_wgs84,enu):
         [-math.cos(lon)*math.sin(lat),-math.sin(lon)*math.sin(lat),math.cos(lat)],
         [math.cos(lat)*math.cos(lon),math.cos(lat)*math.sin(lon),math.sin(lat)]
     ])
-  
-    xyz = xyz0[np.newaxis,:] + enu.dot(xform);
+    
+    xyz = xyz0[np.newaxis,:] + enu.dot(xform)
     return xyz
 
 
@@ -80,28 +91,32 @@ def makems(msname=None,label=None,tel='MeerKAT',pos=None,pos_type='CASA',
 
     obs_pos = None
     lon,lat = None,None
-    if lon_lat:
+    if lon_lat not in [None,"None"]:
         if isinstance(lon_lat,str):
             tmp = lon_lat.split(',')
             lon,lat = ['%sdeg'%i for i in tmp[:2]]
             if len(tmp)>2:
-                el = tmp[3]+'m'
+                el = tmp[2]+'m'
             else:
                 el = '0m'
             obs_pos = me.position('wgs84',lon,lat,el)
     obs_pos = obs_pos or me.observatory(tel)
+    me.doframe(obs_pos)
 
     sm.open(msname)
 
     if fromknown:
-        sm.setknownconfig('ATCA6.0A')
+        sm.setknownconfig(tel)
+
     elif pos:
         if pos_type.lower() == 'casa':
             tb.open(pos)
             (xx,yy,zz),dish_diam,station,mount = get_int_data(tb)
             tb.close()
-        
+            coords = 'itrf'
+
         elif pos_type.lower() == 'ascii':
+            zz = np.zeros(len(pos))
             if noup: 
                 names = ['x','y','dd','station','mount']
                 ncols = 5
@@ -111,25 +126,35 @@ def makems(msname=None,label=None,tel='MeerKAT',pos=None,pos_type='CASA',
             dtype = ['float']*ncols
             dtype[-2:] = ['|S20']*2
             pos = np.genfromtxt(pos,names=names,dtype=dtype,usecols=range(ncols))
-            
-            if coords is 'enu':
-                if noup:
-                    xyz = np.array([pos['x'],pos['y']]).T
-                else:
-                    xyz = np.array([pos['x'],pos['y'],pos['z']]).T
-                xyz = enu2xyz(obs_pos,xyz)
-                xx,yy,zz = xyz[:,0], xyz[:,1],xyz[:,2]
-            else:
-                xx,yy,zz = pos['x'],pos['y'],pos['z']
+  
+
+  #          if coords in ["enu","wgs84"]:
+  #              if noup:
+                    
+  #                  zz = np.zeros(len(pos))
+                #    xyz = np.array([pos['x'],pos['y'],zz]).T
+                #else:
+                #    xyz = np.array([pos['x'],pos['y'],pos['z']]).T
+                
+                #xyz = wgs84_2xyz(xyz) if coords=="wgs84" else enu2xyz(obs_pos,xyz)
+                
+                #xx,yy,zz = xyz[:,0], xyz[:,1],xyz[:,2]
+            #else:
+
+            xx,yy,zz = pos['x'], pos['y'], zz if noup else pos['z']
 
             dish_diam,station,mount = pos['dd'],pos['station'],pos['mount']
+
+        coord_sys = dict(itrf="global", enu="local", wgs84="longlat")
+
         sm.setconfig(telescopename=tel,
                      x=xx,
                      y=yy,
                      z=zz,
                      dishdiameter=dish_diam,
-                     mount=mount[0],
-                     coordsystem='global',
+                     mount= list(mount),
+                     coordsystem= coord_sys.get(coords,'global'),
+                     antname = list(station),
                      referencelocation=obs_pos)
 
     else:

@@ -141,7 +141,7 @@ execfile('%s/casasm.py')
           'scan_length=%(scan_length).4g, dtime="%(dtime)s", freq0=%(freq0)s, dfreq=%(dfreq)s, '\
           'nchan=%(nchan)s, stokes="%(stokes)s", start_time=%(start_time)s, setlimits=%(setlimits)s, '\
           'elevation_limit=%(elevation_limit)f, shadow_limit=%(shadow_limit)f, '\
-          'coords="%(coords)s",lon_lat=%(lon_lat)s, noup=%(noup)s, nbands=%(nbands)d, '\
+          'coords="%(coords)s",lon_lat="%(lon_lat)s", noup=%(noup)s, nbands=%(nbands)d, '\
           'direction=%(direction)s, outdir="%(outdir)s",date="%(date)s",fromknown=%(fromknown)s, '\
           'feed="%(feed)s"'%locals()
     casa_script.write('makems(%s)\nexit'%fmt)
@@ -253,7 +253,7 @@ def main():
     add('pos',help='Antenna positions')
     add('-t','--type',dest='type',default='casa',choices=['casa','ascii'],
             help='position list type : dafault is casa')
-    add('-cs','--coord-sys',dest='coords',default='itrf',choices=['itrf','enu'],
+    add('-cs','--coord-sys',dest='coords',default='itrf',choices=['itrf','enu','wgs84'],
             help='Only relevent when --type=ascii. Coordinate system of antenna positions.' 
                  ' :dafault is itrf')
     add('-lle','--lon-lat-elv',dest='lon_lat',

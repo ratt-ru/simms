@@ -73,7 +73,7 @@ may not be specified; indicate that your file doesn't have this dimension by
 enebaling the --noup (-nu) option.
     """
 
-    if tel and tel.upper() not in [ item.upper() for item in dm.obslist() ]:
+    if (lon_lat is None) and tel and tel.upper() not in [ item.upper() for item in dm.obslist() ]:
         raise ValueError("Could not Find your telescope [%s] in the CASA Database. "\
             "Please double check the telescope name, or provide the location of "\
             "the telescope via lon_lat (or --lon-lat-elv)"%tel)
@@ -323,8 +323,8 @@ def main():
         args = parser.parse_args(args=sys.argv)
         print args
         
-    if not args.tel:
-        parser.error('Telescope name (--tel ot -T) is required')
+    if not (args.tel and args.lon_lat):
+        parser.error('Either the telescope name (--tel/-T) or Telescope coordinate (-lle/--lon-lat )is required')
 
     simms(msname=args.name,label=args.label,tel=args.tel,pos=args.pos,feed=args.feed,
           pos_type=args.type,ra=args.ra,dec=args.dec,synthesis=args.synthesis,scan_length=args.scan_length,

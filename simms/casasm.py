@@ -186,8 +186,8 @@ def makems(msname=None,label=None,tel='MeerKAT',pos=None,pos_type='CASA',
                 usehourangle = True,
                 referencetime = ref_time)
     
-    if setlimits:
-        sm.setlimits(shadowlimit=shadow_limit,elevationlimit=elevation_limit)
+    
+    sm.setlimits(shadowlimit=shadow_limit or 0,elevationlimit=elevation_limit or 0)
     sm.setauto(autocorrwt=0.0)
 
     start_times = map(str,np.arange(start_time,synthesis+start_time,scan_length)*3600)

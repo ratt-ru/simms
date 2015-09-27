@@ -136,13 +136,27 @@ os.chdir('%s')
 execfile('%s/casasm.py')
 """%(cdir,simms_path) )
 
+    if isinstance(scan_length, (str, int, float)):
+        if isinstance(scan_length, str):
+            scan_length = map(float, scan_length.split(","))
+        else:
+            scan_length = [scan_length]
+
+    scan_length = scan_length or [0]
+    if len(scan_length)==1:
+        if scan_length[0] == 0:
+            scan_length = [synthesis]
+        else:
+            nscans = int( np.ceil( synthesis/float(scan_length[0]) ) )
+            scan_length = scan_length*nscans
+
     fmt = 'msname="%(msname)s", label="%(label)s", tel="%(tel)s", pos="%(pos)s", '\
           'pos_type="%(pos_type)s", synthesis=%(synthesis).4g, '\
-          'scan_length=%(scan_length).4g, dtime="%(dtime)s", freq0=%(freq0)s, dfreq=%(dfreq)s, '\
+          'scan_length=%(scan_length)s, dtime="%(dtime)s", freq0=%(freq0)s, dfreq=%(dfreq)s, '\
           'nchan=%(nchan)s, stokes="%(stokes)s", start_time=%(start_time)s, setlimits=%(setlimits)s, '\
           'elevation_limit=%(elevation_limit)f, shadow_limit=%(shadow_limit)f, '\
           'coords="%(coords)s",lon_lat="%(lon_lat)s", noup=%(noup)s, nbands=%(nbands)d, '\
-          'direction=%(direction)s, outdir="%(outdir)s",date="%(date)s",fromknown=%(fromknown)s, '\
+          'direction=%(direction)s, outdir="%(outdir)s",date=%(date)s,fromknown=%(fromknown)s, '\
           'feed="%(feed)s"'%locals()
     casa_script.write('makems(%s)\nexit'%fmt)
     casa_script.flush()
@@ -282,7 +296,7 @@ def main():
             help='Declination in dms or val[unit]: default is -30d0m0s')
     add('-st','--synthesis-time',dest='synthesis',default=4,type=float,
             help='Synthesis time in hours: default is 4.0')
-    add('-sl','--scan-length',dest='scan_length',type=float,default=0,
+    add('-sl','--scan-length',dest='scan_length',type=str,
             help='Synthesis time in hours: default is the sysntheis time')
     add('-dt','--dtime',dest='dtime',default=10,type=int,
             help='Integration time in seconds : default is 10s')
@@ -306,8 +320,8 @@ def main():
             help='Polarization : default is XX XY YX YY')
     add('-feed','--feed',dest='feed',default='perfect X Y',
             help='Polarization : default is "perfect X Y" ')
-    add('-date','--date',dest='date',metavar="EPOCH:yyyy/mm/dd[h/m/s]",
-            help='Date of observation : default is today')
+    add('-date','--date',dest='date',metavar="EPOCH,yyyy/mm/dd[/h:m:s]",action="append",default=[],
+            help='Date of observation. Example "UTC,2014/05/26" or "UTC,2014/05/26/12:12:12" : default is today')
     add('-stl','--set-limits',dest='set_limits',action='store_true',
             help='Set telescope limits; elevation and shadow limts : not the default')
     add('-el','--elevation-limit',dest='elevation_limit',type=float,default=0,
@@ -323,7 +337,8 @@ def main():
         args = parser.parse_args(args=sys.argv)
         print args
         
-    if not (args.tel and args.lon_lat):
+
+    if (not args.tel) and (not args.lon_lat):
         parser.error('Either the telescope name (--tel/-T) or Telescope coordinate (-lle/--lon-lat )is required')
 
     simms(msname=args.name,label=args.label,tel=args.tel,pos=args.pos,feed=args.feed,

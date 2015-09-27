@@ -70,20 +70,26 @@ def makems(msname=None,label=None,tel='MeerKAT',pos=None,pos_type='CASA',
         try: return float(val)
         except TypeError: return val
 
-    # sanity check/correction
-    if scan_length > synthesis or scan_length is 0:
-        print 'SIMMS ## WARN: Scan length > synthesis time or its not set, setiing scan_length=syntheis'
-        scan_length = synthesis
-    start_time = toFloat(start_time) or -scan_length/2
+    if isinstance(scan_length, (tuple, list)):
+        scan_length = map(float, scan_length)
+    else:
+        if scan_length > synthesis or scan_length is 0:
+            print 'SIMMS ## WARN: Scan length > synthesis time or its not set, setiing scan_length=syntheis'
+            scan_length = synthesis
+
+        nscans = int( numpy.ceil(synthesis/float(scan_length)) )
+
+        scan_length = [scan_length]*nscans
+
+
+    start_time = toFloat(start_time) or -scan_length[0]/2
  
     if not isinstance(dtime,str):
         dtime = '%ds'%dtime
  
     
-    #stokes = 'LL LR RL RR'
     if msname.lower().strip()=='none': 
         msname = None
-    #TODO: DO The above check for all other variables whch do not have defaults
     if msname is None:
         msname = '%s_%dh%s.MS'%(label or tel,synthesis,dtime)
     if outdir not in [None,'None','.']:
@@ -127,20 +133,6 @@ def makems(msname=None,label=None,tel='MeerKAT',pos=None,pos_type='CASA',
             dtype[-2:] = ['|S20']*2
             pos = np.genfromtxt(pos,names=names,dtype=dtype,usecols=range(ncols))
   
-
-  #          if coords in ["enu","wgs84"]:
-  #              if noup:
-                    
-  #                  zz = np.zeros(len(pos))
-                #    xyz = np.array([pos['x'],pos['y'],zz]).T
-                #else:
-                #    xyz = np.array([pos['x'],pos['y'],pos['z']]).T
-                
-                #xyz = wgs84_2xyz(xyz) if coords=="wgs84" else enu2xyz(obs_pos,xyz)
-                
-                #xx,yy,zz = xyz[:,0], xyz[:,1],xyz[:,2]
-            #else:
-
             xx,yy,zz = pos['x'], pos['y'], zz if noup else pos['z']
 
             dish_diam,station,mount = pos['dd'],pos['station'],pos['mount']
@@ -160,13 +152,6 @@ def makems(msname=None,label=None,tel='MeerKAT',pos=None,pos_type='CASA',
     else:
         raise RuntimeError('Observatory name is not known, please provide antenna configuration') 
     
-    epoch, date = "IAT", "2015/01/01"
-    if date and len(date.split(":")) > 1:
-        epoch, date = date.split(":") 
-
-    ref_time = me.epoch(epoch,date)
-
-    sm.setfeed(mode=feed)
    
     for i,(freq,df,nc) in enumerate( zip(freq0,dfreq,nchan) ): 
         sm.setspwindow(spwname = '%02d'%i,
@@ -182,24 +167,65 @@ def makems(msname=None,label=None,tel='MeerKAT',pos=None,pos_type='CASA',
         field = field.split(',')
         sm.setfield(sourcename='%02d'%fid,sourcedirection=me.direction(*field))
 
-    sm.settimes(integrationtime = dtime,
-                usehourangle = True,
-                referencetime = ref_time)
     
     
     sm.setlimits(shadowlimit=shadow_limit or 0,elevationlimit=elevation_limit or 0)
     sm.setauto(autocorrwt=0.0)
+    sm.setfeed(mode=feed)
 
-    start_times = map(str,np.arange(start_time,synthesis+start_time,scan_length)*3600)
-    stop_times = map(str,np.arange(start_time,synthesis+start_time,scan_length)*3600 + scan_length*3600)
+    multiple_starts = False
+    if len(date)>1:
+        nstarts = len(date)
+        ref_times = []
+        multiple_starts = True
 
+        for _date in date:
+            if len(_date.split(",")) > 1:
+                epoch, _date = _date.split(",") 
+            else:
+                epoch, _date = "UTC", _date
+
+            ref_times.append( me.epoch(epoch,_date) )
+
+    if multiple_starts:
+        start_times = [start_time*3600]
+        stop_times = [start_times[0] + scan_length[0]*3600]
+
+        ref_time = ref_times[0]
+        for stime,scan in zip(ref_times[1:], scan_length[1:]):
+            diff = start_times[0] + (stime["m0"]["value"] - ref_time["m0"]["value"])*24*3600
+            start_times.append(diff)
+            stop_times.append(diff + scan*3600.)
+
+    else:
+        if date :
+            date = date[0]
+            if len(date.split(",")) > 1:
+                epoch, date = date[0].split(",")
+            else:
+                epoch, date = "UTC", date
+        else:
+            epoch, date = "UTC", "2015/01/01"
+
+        start_times = [start_time*3600]
+        stop_times = [start_times[0] + scan_length[0]*3600]
+        for i, stime in enumerate(scan_length[1:], 1):
+            start_times.append( stop_times[i-1] )
+            stop_times.append( start_times[i] + scan_length[i]*3600)
+
+        ref_time = me.epoch(epoch,date)
+
+    sm.settimes(integrationtime = dtime,
+                usehourangle = True,
+                referencetime = ref_time)
+
+    me.doframe(ref_time)
+    me.doframe(obs_pos)
     for ddid in range(nbands):
         for start,stop in zip(start_times,stop_times):
             for fid in range(nfields):
                 sm.observe('%02d'%fid,'%02d'%ddid,
-                               starttime=start,stoptime=stop)
-                me.doframe(ref_time)
-                me.doframe(obs_pos)
+                           starttime=start,stoptime=stop)
 
     if sm.done():
         print "Empty MS '%s' created"%msname

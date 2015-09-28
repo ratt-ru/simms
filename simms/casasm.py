@@ -201,7 +201,7 @@ def makems(msname=None,label=None,tel='MeerKAT',pos=None,pos_type='CASA',
         if date :
             date = date[0]
             if len(date.split(",")) > 1:
-                epoch, date = date[0].split(",")
+                epoch, date = date.split(",")
             else:
                 epoch, date = "UTC", date
         else:

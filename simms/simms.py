@@ -10,6 +10,7 @@ import glob
 import numpy as np
 import pyrap.measures
 from pyrap.tables import table
+import json
 
 dm = pyrap.measures.measures()
 
@@ -113,7 +114,7 @@ enebaling the --noup (-nu) option.
         direction = [direction]
 
     if date is None:
-        date = 'IAT:%d/%d/%d'%(time.localtime()[:3])
+        date = ['UTC,%d/%d/%d'%(time.localtime()[:3])]
 
     if msname is None:
         msname = '%s_%dh%ss.MS'%(label or tel,synthesis,dtime)
@@ -264,7 +265,7 @@ def main():
     add('-ukc','--use-known-config',dest='knownconfig',action='store_true',
             help='Use known antenna configuration. For some reason sm.setknownconfig() '
             'is not working. So this option does not work as yet.')
-    add('pos',help='Antenna positions')
+    add('pos',help='Antenna positions', nargs='?')
     add('-t','--type',dest='type',default='casa',choices=['casa','ascii'],
             help='position list type : dafault is casa')
     add('-cs','--coord-sys',dest='coords',default='itrf',choices=['itrf','enu','wgs84'],
@@ -330,21 +331,35 @@ def main():
             help='Shadow limit. Will only be taken into account if --set-limits (-stl) is enabled : no default')
     add('-ng','--nolog',dest='nolog',action='store_true',
             help='Don\'t keep Log file : not the default')
+    add('-jc','--json-config',dest='config',
+            help='Json config file : No default')
 
     try:
         args = parser.parse_args()
     except ParserError: 
         args = parser.parse_args(args=sys.argv)
         print args
+
+    if args.config:
+        with open(args.config) as conf:
+            jdict = json.load(conf)
+
+        for key, val in jdict.iteritems():
+            if isinstance(val, unicode):
+                jdict[key] = str(val)
+
+        simms(**jdict)
+
+    else:
         
 
-    if (not args.tel) and (not args.lon_lat):
-        parser.error('Either the telescope name (--tel/-T) or Telescope coordinate (-lle/--lon-lat )is required')
+        if (not args.tel) and (not args.lon_lat):
+            parser.error('Either the telescope name (--tel/-T) or Telescope coordinate (-lle/--lon-lat )is required')
 
-    simms(msname=args.name,label=args.label,tel=args.tel,pos=args.pos,feed=args.feed,
-          pos_type=args.type,ra=args.ra,dec=args.dec,synthesis=args.synthesis,scan_length=args.scan_length,
-          dtime=args.dtime,freq0=args.freq0,dfreq=args.dfreq,nchan=args.nchan,
-          stokes=args.pol,start_time=args.init_ha,setlimits=args.set_limits,
-          elevation_limit=args.elevation_limit,shadow_limit=args.shadow_limit,
-          outdir=args.outdir,coords=args.coords,lon_lat=args.lon_lat,noup=args.noup,
-          direction=args.direction,nbands=args.nband,date=args.date,fromknown=args.knownconfig)
+        simms(msname=args.name,label=args.label,tel=args.tel,pos=args.pos,feed=args.feed,
+              pos_type=args.type,ra=args.ra,dec=args.dec,synthesis=args.synthesis,scan_length=args.scan_length,
+              dtime=args.dtime,freq0=args.freq0,dfreq=args.dfreq,nchan=args.nchan,
+              stokes=args.pol,start_time=args.init_ha,setlimits=args.set_limits,
+              elevation_limit=args.elevation_limit,shadow_limit=args.shadow_limit,
+              outdir=args.outdir,coords=args.coords,lon_lat=args.lon_lat,noup=args.noup,
+              direction=args.direction,nbands=args.nband,date=args.date,fromknown=args.knownconfig)

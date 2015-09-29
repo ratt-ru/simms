@@ -4,7 +4,7 @@ import os
 from setuptools import setup
 
 setup(name="simms",
-    version="0.4.5",
+    version="0.5.0",
     description="Empty MS creation tool",
     author="Sphesihle Makhathini",
     author_email="Sphesihle Makhathini <sphemakh@gmail.com>",

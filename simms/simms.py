@@ -8,11 +8,7 @@ import time
 import tempfile
 import glob
 import numpy as np
-import pyrap.measures
-from pyrap.tables import table
 import json
-
-dm = pyrap.measures.measures()
 
 # I want to replace error() in argparse.ArgumentParser class
 # I do this so I can catch the exception raised when too few arguments
@@ -74,39 +70,35 @@ may not be specified; indicate that your file doesn't have this dimension by
 enebaling the --noup (-nu) option.
     """
 
-    if (lon_lat is None) and tel and tel.upper() not in [ item.upper() for item in dm.obslist() ]:
-        raise ValueError("Could not Find your telescope [%s] in the CASA Database. "\
-            "Please double check the telescope name, or provide the location of "\
-            "the telescope via lon_lat (or --lon-lat-elv)"%tel)
-
-    # MS frequency set up
-    def toList(string,delimiter=',',f0=False):
-        if isinstance(string,(list,tuple)):
-            return string
-        if isinstance(string,str) and string.find(delimiter)>0:
-            return string.split(delimiter)
-        else:
-            if f0 and nbands>1:
-                freq = dm.frequency('rest',str(string))['m0']['value']
-                _f0 = [freq]
-                info('Start frequency for band 0 is %.4g GHz'%(freq/1e9))
-                for i in range(1,nbands):
-                    df = dm.frequency('rest',str(dfreq[i-1]))['m0']['value']
-                    _f0.append(_f0[i-1]+nchan[i-1]*df)
-                    info('Start frequency for band %d is %.4g GHz'%(i,_f0[i]/1e9))
-                return _f0
-            return [string]*nbands
-    
+    def toList(value, nchan=False):
+        if isinstance(value, str):
+            string = value.split(",")
+            if len(string)>1:
+                return map(int, string) if nchan else string
+            else:
+                return int(value) if nchan else value
+        elif isinstance(value, (int, float)) and not nchan:
+            return "%fMHz"%(value/1e6)
+            
     # The order of  nchan,dfreq,freq0 should not be changed below.
-    nchan = map(int, toList(nchan) )
     dfreq = toList(dfreq)
-    freq0 = toList(freq0,f0=True)
-    
-    for item in 'freq0 dfreq nchan'.split():
-        val = locals()[item]
-        NN = len(val)
-        if NN!=nbands :
-            raise ValueError('Size of %s does not match nbands'%item)
+    freq0 = toList(freq0)
+    nchan = toList(nchan, nchan=True)
+
+    if nbands==1 and isinstance(nchan, (list, tuple)):
+        nbands = len(nchan)
+        
+    if nbands>1:
+        if isinstance(freq0, str):
+            freq0 = [freq0]*nbands
+        if isinstance(dfreq, str):
+            dfreq = [dfreq]*nbands
+        if isinstance(nchan, int):
+            nchan = [nchan]*nbands
+    else:
+         freq0 = [freq0]
+         dfreq = [dfreq]
+         nchan = [nchan]
 
     if direction in [None,[],()]:
         direction = ','.join(['J2000',ra,dec])
@@ -207,39 +199,10 @@ execfile('%s/casasm.py')
             ran = " ".join(map(str,sys.argv))
             std.write('\n %s ::: %s\n%s\n'%(ts," ".join(command),ran))
 
-
-    # Run a few tests on the MS, see if its valid.
-    info("Validating %s ..."%msname)
-    validated = False
-    try:
-        tab = table(msname)
-        data = tab.getcol("DATA")
-        ddid = list(set( tab.getcol("DATA_DESC_ID") ))
-        fid = list(set( tab.getcol("FIELD_ID") ))
-        tab.close()
-        if data is None:
-            validated = False
-            raise CasapyError
-        elif 0 not in ddid or 0 not in fid:
-            validated = False
-            raise CasapyError
-        else:
-            validated = True
-    except:
-        # Clean up and exit
-        for tabF in glob.glob("tab*"):
-            if os.path.isdir(tabF) and os.path.getmtime(tabF)>t0:
-                os.system("rm -fr %s"%tabF)
-        
-        os.system( "rm -fr %s %s"%(msname, tmpdir) )
-        abort(message, exception=CasapyError)
-    
-    if validated:
-        info("DONE!")    
-        return msname
+    if os.path.exists(msname):
+        info("simms succeeded")
     else:
-        return None
-
+        raise CasapyError(message)
 
 # Add this for backwards compatibilty.
 simms = create_empty_ms

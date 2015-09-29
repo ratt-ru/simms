@@ -4,6 +4,7 @@ import os
 import sys
 import numpy as np
 import math
+import glob
 
 DEG = 180/math.pi
 
@@ -65,6 +66,12 @@ def makems(msname=None,label=None,tel='MeerKAT',pos=None,pos_type='CASA',
            noup=False):
     """ Creates an empty measurement set using CASA simulate (sm) tool. """
 
+
+    if (lon_lat is None) and tel and tel.upper() not in [ item.upper() for item in me.obslist() ]:
+        raise ValueError("Could not Find your telescope [%s] in the CASA Database. "\
+            "Please double check the telescope name, or provide the location of "\
+            "the telescope via lon_lat (or --lon-lat-elv)"%tel)
+
     # The price you pay for allowing both string and float values for the same options
     def toFloat(val):
         try: return float(val)
@@ -81,12 +88,10 @@ def makems(msname=None,label=None,tel='MeerKAT',pos=None,pos_type='CASA',
 
         scan_length = [scan_length]*nscans
 
-
     start_time = toFloat(start_time) or -scan_length[0]/2
  
     if not isinstance(dtime,str):
         dtime = '%ds'%dtime
- 
     
     if msname.lower().strip()=='none': 
         msname = None
@@ -108,6 +113,14 @@ def makems(msname=None,label=None,tel='MeerKAT',pos=None,pos_type='CASA',
             obs_pos = me.position('wgs84',lon,lat,el)
     obs_pos = obs_pos or me.observatory(tel)
     me.doframe(obs_pos)
+
+    # Setup
+    # Frequency
+    # info
+
+
+
+
 
     sm.open(msname)
 
@@ -151,7 +164,13 @@ def makems(msname=None,label=None,tel='MeerKAT',pos=None,pos_type='CASA',
 
     else:
         raise RuntimeError('Observatory name is not known, please provide antenna configuration') 
-    
+
+    if len(freq0)>1:
+        if freq0[0]==freq0[-1]:
+            for i, df in enumerate(dfreq[1:], 1):
+                df = me.frequency("rest", df)["m0"]["value"]
+                f0 = me.frequency("rest", freq0[i-1])["m0"]["value"]
+                freq0[i] = "%fMHz"%( (f0 + df)/1e6)
    
     for i,(freq,df,nc) in enumerate( zip(freq0,dfreq,nchan) ): 
         sm.setspwindow(spwname = '%02d'%i,
@@ -161,14 +180,11 @@ def makems(msname=None,label=None,tel='MeerKAT',pos=None,pos_type='CASA',
                    nchannels = nc,
                    stokes= stokes)
 
-
     nfields = len(direction)
     for fid,field in enumerate(direction):
         field = field.split(',')
         sm.setfield(sourcename='%02d'%fid,sourcedirection=me.direction(*field))
 
-    
-    
     sm.setlimits(shadowlimit=shadow_limit or 0,elevationlimit=elevation_limit or 0)
     sm.setauto(autocorrwt=0.0)
     sm.setfeed(mode=feed)
@@ -233,4 +249,42 @@ def makems(msname=None,label=None,tel='MeerKAT',pos=None,pos_type='CASA',
          raise RuntimeError('Failed to create MS. Look at the log file. '
                             'Double check you settings. If you feel this '
                             'is due a to bug, raise an issue on https://github.com/SpheMakh/simms')
-    return msname
+    if validate(msname):
+        return msname
+    else:
+        os.system("rm -fr %s"%msname)
+
+
+def validate(msname):
+
+    # Run a few tests on the MS, see if its valid.
+    print "Validating %s ..."%msname
+    validated = False
+
+    try:
+        tb.open(msname)
+        data = tb.getcell("DATA", 0)
+        ddid = list(set( tb.getcol("DATA_DESC_ID", 0) ))
+        fid = list(set( tb.getcol("FIELD_ID", 0) ))
+        tb.close()
+
+        if data is None:
+            validated = False
+        elif 0 not in ddid or 0 not in fid:
+            validated = False
+        else:
+            validated = True
+    except ValueError:
+        # Clean up and exit
+        for tabF in glob.glob("tab*"):
+            if os.path.isdir(tabF) and os.path.getmtime(tabF)>t0:
+                os.system("rm -fr %s"%tabF)
+        
+        return False
+    
+    if validated:
+        print "MS validated"
+        return True
+    else:
+        return False
+

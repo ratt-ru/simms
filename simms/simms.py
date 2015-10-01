@@ -77,10 +77,9 @@ enebaling the --noup (-nu) option.
                 return map(int, string) if nchan else string
             else:
                 return int(value) if nchan else value
-        elif isinstance(value, (int, float)) and not nchan:
-            return "%fMHz"%(value/1e6)
+        elif isinstance(value, (int, float)):
+            return value if nchan else "%fMHz"%(value/1e6)
             
-    # The order of  nchan,dfreq,freq0 should not be changed below.
     dfreq = toList(dfreq)
     freq0 = toList(freq0)
     nchan = toList(nchan, nchan=True)

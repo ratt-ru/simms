@@ -172,8 +172,6 @@ def makems(msname=None,label=None,tel='MeerKAT',pos=None,pos_type='CASA',
                 f0 = me.frequency("rest", freq0[i-1])["m0"]["value"]
                 freq0[i] = "%fMHz"%( (f0 + df)/1e6)
   
-    print "<><><>", freq0, dfreq, nchan
-    
     for i,(freq,df,nc) in enumerate( zip(freq0,dfreq,nchan) ): 
         sm.setspwindow(spwname = '%02d'%i,
                    freq = freq,

@@ -10,6 +10,8 @@ import glob
 import numpy as np
 import json
 
+
+
 # I want to replace error() in argparse.ArgumentParser class
 # I do this so I can catch the exception raised when too few arguments
 # are parsed. 
@@ -22,6 +24,7 @@ class ArgumentParser(argparse.ArgumentParser):
 # set simms directory
 simms_path = os.path.realpath(__file__)
 simms_path = os.path.dirname(simms_path)
+execfile("%s/__init__.py"%simms_path)
 
 # Communication functions
 def info(string):
@@ -207,9 +210,6 @@ execfile('%s/casasm.py')
 simms = create_empty_ms
 
 def main():
-
-    __version_info__ = (1,0,0)
-    __version__ = ".".join( map(str,__version_info__) )
 
     for i, arg in enumerate(sys.argv):
         if (arg[0] == '-') and arg[1].isdigit(): sys.argv[i] = ' ' + arg

@@ -2,9 +2,10 @@
 
 import os
 from setuptools import setup
+import simms
 
 setup(name="simms",
-    version="0.5.2",
+    version=simms.__version__,
     description="Empty MS creation tool",
     author="Sphesihle Makhathini",
     author_email="Sphesihle Makhathini <sphemakh@gmail.com>",

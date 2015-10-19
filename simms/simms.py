@@ -74,9 +74,9 @@ enebaling the --noup (-nu) option.
     """
 
     def toList(value, nchan=False):
-        if isinstance(value, (tuple, list):
+        if isinstance(value, (tuple, list)):
             if len(value)==1:
-            value = value[0]
+                value = value[0]
         if isinstance(value, str):
             string = value.split(",")
             if len(string)>1:

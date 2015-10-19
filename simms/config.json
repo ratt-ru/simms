@@ -7,7 +7,6 @@
     "ra" : "0h0m0s", 
     "dec" : "-30d0m0s", 
     "synthesis" : 4, 
-    "scan_length" : 4, 
     "dtime" : 10, 
     "freq0" : "700MHz", 
     "dfreq" : "50kHz", 

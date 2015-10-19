@@ -43,7 +43,7 @@ class CasapyError(Exception):
 
 
 def create_empty_ms(msname=None,label=None,tel=None,pos=None,pos_type='casa',
-          ra='0h0m0s',dec='-30d0m0s',synthesis=4,scan_length=4,dtime=10,freq0=700e6,
+          ra='0h0m0s',dec='-30d0m0s',synthesis=4,scan_length=[0],dtime=10,freq0=700e6,
           dfreq=50e6,nchan=1,stokes='XX XY YX YY',start_time=-2,setlimits=False,
           elevation_limit=0,shadow_limit=0,outdir=None,nolog=False,
           coords='itrf',lon_lat=None,noup=False,nbands=1,direction=[],date=None,
@@ -74,6 +74,9 @@ enebaling the --noup (-nu) option.
     """
 
     def toList(value, nchan=False):
+        if isinstance(value, (tuple, list):
+            if len(value)==1:
+            value = value[0]
         if isinstance(value, str):
             string = value.split(",")
             if len(string)>1:
@@ -153,6 +156,7 @@ execfile('%s/casasm.py')
           'coords="%(coords)s",lon_lat="%(lon_lat)s", noup=%(noup)s, nbands=%(nbands)d, '\
           'direction=%(direction)s, outdir="%(outdir)s",date=%(date)s,fromknown=%(fromknown)s, '\
           'feed="%(feed)s"'%locals()
+    info("Simms >>: %s"%fmt)
     casa_script.write('makems(%s)\nexit'%fmt)
     casa_script.flush()
 
@@ -200,6 +204,7 @@ execfile('%s/casasm.py')
             ts = '%d/%d/%d  %d:%d:%d'%(time.localtime()[:6])
             ran = " ".join(map(str,sys.argv))
             std.write('\n %s ::: %s\n%s\n'%(ts," ".join(command),ran))
+            std.write("Parameters: %s\n"%fmt)
 
     if os.path.exists(msname):
         info("simms succeeded")

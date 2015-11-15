@@ -47,7 +47,7 @@ def create_empty_ms(msname=None,label=None,tel=None,pos=None,pos_type='casa',
           dfreq=50e6,nchan=1,stokes='XX XY YX YY',start_time=-2,setlimits=False,
           elevation_limit=0,shadow_limit=0,outdir=None,nolog=False,
           coords='itrf',lon_lat=None,noup=False,nbands=1,direction=[],date=None,
-          fromknown=False,feed="perfect X Y"):
+          fromknown=False,feed="perfect X Y",scan_lag=0):
 
     """ 
 Uses the CASA simulate tool to create an empty measurement set. Requires
@@ -155,7 +155,7 @@ execfile('%s/casasm.py')
           'elevation_limit=%(elevation_limit)f, shadow_limit=%(shadow_limit)f, '\
           'coords="%(coords)s",lon_lat="%(lon_lat)s", noup=%(noup)s, nbands=%(nbands)d, '\
           'direction=%(direction)s, outdir="%(outdir)s",date=%(date)s,fromknown=%(fromknown)s, '\
-          'feed="%(feed)s"'%locals()
+          'feed="%(feed)s",scan_lag=%(scan_lag)s'%locals()
     info("Simms >>: %s"%fmt)
     casa_script.write('makems(%s)\nexit'%fmt)
     casa_script.flush()
@@ -290,6 +290,8 @@ def main():
             help='Polarization : default is "perfect X Y" ')
     add('-date','--date',dest='date',metavar="EPOCH,yyyy/mm/dd[/h:m:s]",action="append",default=[],
             help='Date of observation. Example "UTC,2014/05/26" or "UTC,2014/05/26/12:12:12" : default is today')
+    add('-slg','--scan-lag',dest='scan_lag',default=0,
+            help='Lag time between scans. In hrs: default is 0')
     add('-stl','--set-limits',dest='set_limits',action='store_true',
             help='Set telescope limits; elevation and shadow limts : not the default')
     add('-el','--elevation-limit',dest='elevation_limit',type=float,default=0,
@@ -315,6 +317,7 @@ def main():
             if isinstance(val, unicode):
                 jdict[key] = str(val)
 
+        print "<<><><><><><", jdict["outdir"], "<><><><><><><<"
         simms(**jdict)
 
     else:
@@ -328,5 +331,5 @@ def main():
               dtime=args.dtime,freq0=args.freq0,dfreq=args.dfreq,nchan=args.nchan,
               stokes=args.pol,start_time=args.init_ha,setlimits=args.set_limits,
               elevation_limit=args.elevation_limit,shadow_limit=args.shadow_limit,
-              outdir=args.outdir,coords=args.coords,lon_lat=args.lon_lat,noup=args.noup,
+              outdir=args.outdir,coords=args.coords,lon_lat=args.lon_lat,noup=args.noup,scan_lag=args.scan_lag,
               direction=args.direction,nbands=args.nband,date=args.date,fromknown=args.knownconfig)

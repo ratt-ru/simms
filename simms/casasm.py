@@ -63,7 +63,8 @@ def makems(msname=None,label=None,tel='MeerKAT',pos=None,pos_type='CASA',
            coords='itrf',           
            lon_lat=None,
            date=None,
-           noup=False):
+           noup=False,
+           scan_lag=0):
     """ Creates an empty measurement set using CASA simulate (sm) tool. """
 
 
@@ -208,8 +209,13 @@ def makems(msname=None,label=None,tel='MeerKAT',pos=None,pos_type='CASA',
         stop_times = [start_times[0] + scan_length[0]*3600]
 
         ref_time = ref_times[0]
-        for stime,scan in zip(ref_times[1:], scan_length[1:]):
-            diff = start_times[0] + (stime["m0"]["value"] - ref_time["m0"]["value"])*24*3600
+        for i, stime, scan in enumerate(zip(ref_times[1:], scan_length[1:])):
+            if i==0:
+                diff = 0
+            else:
+                diff = start_times[0] + (stime["m0"]["value"] - ref_time["m0"]["value"])*24*3600
+                diff += scan_lag*3600
+
             start_times.append(diff)
             stop_times.append(diff + scan*3600.)
 
@@ -223,20 +229,22 @@ def makems(msname=None,label=None,tel='MeerKAT',pos=None,pos_type='CASA',
         else:
             epoch, date = "UTC", "2015/01/01"
 
-        start_times = [start_time*3600]
+        start_times = [0] if date else [start_time*3600]
         stop_times = [start_times[0] + scan_length[0]*3600]
-        for i, stime in enumerate(scan_length[1:], 1):
-            start_times.append( stop_times[i-1] )
-            stop_times.append( start_times[i] + scan_length[i]*3600)
 
-        ref_time = me.epoch(epoch,date)
+        for i, stime in enumerate(scan_length[1:], 1):
+            start_times.append( start_times[i-1] + (stime + scan_lag)*3600)
+            stop_times.append( stop_times[i-1] + (scan_lag + stime)*3600)
+
+        ref_time = me.epoch(epoch, date)
 
     sm.settimes(integrationtime = dtime,
-                usehourangle = True,
+                usehourangle = False if date else True,
                 referencetime = ref_time)
 
     me.doframe(ref_time)
     me.doframe(obs_pos)
+
     for ddid in range(nbands):
         for start,stop in zip(start_times,stop_times):
             for fid in range(nfields):

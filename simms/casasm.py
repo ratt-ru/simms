@@ -13,7 +13,7 @@ def get_int_data(tab):
 
     x,y,z = tab.getcol('POSITION')
     dish_diam = tab.getcol('DISH_DIAMETER')
-    station = tab.getcol('STATION')
+    station = tab.getcol('NAME')
     mount = tab.getcol('MOUNT')
     return  (x,y,z),dish_diam,station,mount
 

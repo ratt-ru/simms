@@ -1,19 +1,39 @@
 #!/usr/bin/env python
 
-import os
-from setuptools import setup
-import simms
+
+from setuptools import setup, find_packages
+from simms import __version__
+
+
+scripts = [
+    "simms/bin/simms"
+]
+
+
+package_data = {'simms': [
+    'observatories/*.txt',
+    'observatories/*/*',
+    'src/*',
+    'config.json',
+]}
+
+
+requires = [
+    "numpy",
+    "python_casacore"
+]
+
 
 setup(name="simms",
-    version=simms.__version__,
-    description="Empty MS creation tool",
-    author="Sphesihle Makhathini",
-    author_email="Sphesihle Makhathini <sphemakh@gmail.com>",
-    url="https://github.com/sphemakh/simms",
-    packages=["simms"],
-    requires=["casapy","numpy"],
-    scripts=["simms/bin/" + i for i in os.listdir("simms/bin")], 
-    licence="This program should come with the GNU General Public Licence. "\
-            "If not, find it at http://www.gnu.org/licenses/old-licenses/gpl-2.0-standalone.html",
-    classifiers=[],
-     )
+      version=__version__,
+      description="Empty MS creation tool",
+      author="Sphesihle Makhathini",
+      author_email="sphemakh@gmail.com",
+      url="https://github.com/radio-astro/simms",
+      packages=find_packages(),
+      package_data=package_data,
+      requires=requires,
+      scripts=scripts,
+      license="GPL2",
+      classifiers=[],
+)

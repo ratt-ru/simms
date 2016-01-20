@@ -215,7 +215,7 @@ def makems(msname=None,label=None,tel='MeerKAT',pos=None,pos_type='CASA',
             else:
                 epoch, date = "UTC", date
         else:
-            epoch, date = "UTC", "2015/01/01"
+            epoch, date = "UTC", "2016/01/01"
 
         start_times = [0] if date else [start_time*3600]
         stop_times = [start_times[0] + scan_length[0]*3600]
@@ -244,10 +244,24 @@ def makems(msname=None,label=None,tel='MeerKAT',pos=None,pos_type='CASA',
          raise RuntimeError('Failed to create MS. Look at the log file. '
                             'Double check you settings. If you feel this '
                             'is due a to bug, raise an issue on https://github.com/SpheMakh/simms')
+
+    # Clear all flags if limits were not  set
+    if not setlimits:
+        tb.open(msname, nomodify=False)
+        flags = tb.getcol("FLAG")
+        if flags.sum() > 0:
+            flags[...] = False
+            tb.putcol("FLAG", flags)
+        tb.close()
+
+
     if validate(msname):
         return msname
     else:
         os.system("rm -fr %s"%msname)
+
+
+
 
 
 def validate(msname):

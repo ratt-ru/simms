@@ -14,4 +14,4 @@ ADD . /tmp/simms
 
 RUN cd /tmp/simms && python setup.py install
 
-ENTRYPOINT /usr/local/bin/simms
+CMD /usr/local/bin/simms

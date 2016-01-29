@@ -1,4 +1,4 @@
-FROM radioastro/casa:4.2
+FROM radioastro/casa
 
 MAINTAINER gijsmolenaar@gmail.com
 

@@ -42,6 +42,45 @@ class CasapyError(Exception):
     pass
 
 
+
+
+_ANTENNAS = { 
+     "meerkat": "meerkat.itrf.txt",
+     "kat-7": "kat-7.itrf.txt",
+     "jvla": "vlad.itrf.txt",
+     "vla": "vlad.itrf.txt",
+     "jvla-a": "vlaa.itrf.txt",
+     "jvla-b": "vlab.itrf.txt",
+     "jvla-c": "vlac.itrf.txt",
+     "jvla-d": "vlad.itrf.txt",
+     "vla-a": "vlaa.itrf.txt",
+     "vla-b": "vlab.itrf.txt",
+     "vla-c": "vlac.itrf.txt",
+     "vla-d": "vlad.itrf.txt",
+     "wsrt": "wsrt.itrf.txt",
+     "ska1mid254": "skamid254.itrf.txt",
+     "ska1mid197": "skamid197.itrf.txt",
+}
+
+_OBS = { 
+     "meerkat": "meerkat",
+     "kat-7": "kat-7",
+     "jvla": "vla",
+     "vla": "vla",
+     "jvla-a": "vla",
+     "jvla-b": "vla",
+     "jvla-c": "vla",
+     "jvla-d": "vla",
+     "vla-b": "vla",
+     "vla-c": "vla",
+     "vla-d": "vla",
+     "wsrt": "wsrt",
+     "ska1mid254": "meerkat",
+     "ska1mid197": "meerkat",
+}
+
+
+
 def create_empty_ms(msname=None,label=None,tel=None,pos=None,pos_type='casa',
           ra='0h0m0s',dec='-30d0m0s',synthesis=4,scan_length=[0],dtime=10,freq0=700e6,
           dfreq=50e6,nchan=1,stokes='XX XY YX YY',start_time=-2,setlimits=False,
@@ -318,19 +357,38 @@ def main():
             if isinstance(val, unicode):
                 jdict[key] = str(val)
 
+        tel = jdict["tel"]
+        if tel in _ANTENNAS.keys() and not jdict.get("pos", False):
+            jdict["tel"] = _OBS[tel]
+            jdict["pos"] = "%s/observatories/%s"%(simms_path, _ANTENNAS[tel])
+            jdict["pos_type"] = "ascii"
+            jdict["coords"] = "itrf"
+
         simms(**jdict)
 
     else:
-        
 
         if (not args.tel) and (not args.lon_lat):
             parser.error('Either the telescope name (--tel/-T) or Telescope coordinate (-lle/--lon-lat )is required')
+        
+        if args.tel.lower() in _ANTENNAS.keys():
+            telescope = _OBS[args.tel.lower()]
+            antennas = "%s/observatories/%s"%(simms_path, _ANTENNAS[args.tel.lower()])
+            _type = "ascii"
+            cs = "itrf"
+        else:
+             antennas = args.pos
+             telescope = args.tel
+             _type = args.type
+             cs = args.coords
 
-        simms(msname=args.name,label=args.label,tel=args.tel,pos=args.pos,feed=args.feed,
-              pos_type=args.type,ra=args.ra,dec=args.dec,synthesis=args.synthesis,scan_length=args.scan_length,
+
+
+        simms(msname=args.name,label=args.label,tel=telescope,pos=antennas,feed=args.feed,
+              pos_type=_type,ra=args.ra,dec=args.dec,synthesis=args.synthesis,scan_length=args.scan_length,
               dtime=args.dtime,freq0=args.freq0,dfreq=args.dfreq,nchan=args.nchan,
               stokes=args.pol,start_time=args.init_ha,setlimits=args.set_limits,
               elevation_limit=args.elevation_limit,shadow_limit=args.shadow_limit,
-              outdir=args.outdir,coords=args.coords,lon_lat=args.lon_lat,noup=args.noup,
+              outdir=args.outdir,coords=cs,lon_lat=args.lon_lat,noup=args.noup,
               direction=args.direction,nbands=args.nband,date=args.date,
               fromknown=args.knownconfig,scan_lag=args.scan_lag)

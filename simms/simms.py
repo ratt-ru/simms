@@ -86,7 +86,7 @@ def create_empty_ms(msname=None,label=None,tel=None,pos=None,pos_type='casa',
           dfreq=50e6,nchan=1,stokes='XX XY YX YY',start_time=-2,setlimits=False,
           elevation_limit=0,shadow_limit=0,outdir=None,nolog=False,
           coords='itrf',lon_lat=None,noup=False,nbands=1,direction=[],date=None,
-          fromknown=False,feed="perfect X Y",scan_lag=0):
+          fromknown=False,feed="perfect X Y",scan_lag=0, auto_corr=False):
 
     """ 
 Uses the CASA simulate tool to create an empty measurement set. Requires
@@ -194,7 +194,7 @@ execfile('%s/casasm.py')
           'elevation_limit=%(elevation_limit)f, shadow_limit=%(shadow_limit)f, '\
           'coords="%(coords)s",lon_lat="%(lon_lat)s", noup=%(noup)s, nbands=%(nbands)d, '\
           'direction=%(direction)s, outdir="%(outdir)s",date=%(date)s,fromknown=%(fromknown)s, '\
-          'feed="%(feed)s",scan_lag=%(scan_lag).4g'%locals()
+          'feed="%(feed)s",scan_lag=%(scan_lag).4g,auto_corr=%(auto_corr)s'%locals()
 
     info("Simms >>: %s"%fmt)
     casa_script.write('makems(%s)\nexit'%fmt)
@@ -338,6 +338,8 @@ def main():
             help='Dish elevation limit. Will only be taken into account if --set-limits (-stl) is enabled : no default')
     add('-shl','--shadow-limit',dest='shadow_limit',type=float,default=0,
             help='Shadow limit. Will only be taken into account if --set-limits (-stl) is enabled : no default')
+    add('-ac','--auto-correlations',dest='auto_corr',action='store_true',
+            help='Don\'t keep Log file : not the default')
     add('-ng','--nolog',dest='nolog',action='store_true',
             help='Don\'t keep Log file : not the default')
     add('-jc','--json-config',dest='config',
@@ -391,4 +393,4 @@ def main():
               elevation_limit=args.elevation_limit,shadow_limit=args.shadow_limit,
               outdir=args.outdir,coords=cs,lon_lat=args.lon_lat,noup=args.noup,
               direction=args.direction,nbands=args.nband,date=args.date,
-              fromknown=args.knownconfig,scan_lag=args.scan_lag)
+              fromknown=args.knownconfig,scan_lag=args.scan_lag,auto_corr=args.auto_corr)

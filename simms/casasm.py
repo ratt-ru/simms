@@ -64,6 +64,7 @@ def makems(msname=None,label=None,tel='MeerKAT',pos=None,pos_type='CASA',
            lon_lat=None,
            date=None,
            noup=False,
+           auto_corr=False,
            scan_lag=0):
     """ Creates an empty measurement set using CASA simulate (sm) tool. """
 
@@ -180,7 +181,7 @@ def makems(msname=None,label=None,tel='MeerKAT',pos=None,pos_type='CASA',
         sm.setfield(sourcename='%02d'%fid,sourcedirection=me.direction(*field))
 
     sm.setlimits(shadowlimit=shadow_limit or 0,elevationlimit=elevation_limit or 0)
-    sm.setauto(autocorrwt=0.0)
+    sm.setauto(autocorrwt=1.0 if auto_corr else 0.0)
     sm.setfeed(mode=feed)
 
     multiple_starts = False

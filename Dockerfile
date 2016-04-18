@@ -7,6 +7,7 @@ RUN apt-get update && \
         python-pip \
         python-casacore \
         python-numpy \
+        python-pyfits \
         && \
     rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 

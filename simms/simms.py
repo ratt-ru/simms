@@ -93,7 +93,7 @@ Uses the CASA simulate tool to create an empty measurement set. Requires
 either an antenna table (CASA table) or a list of ITRF or ENU positions. 
 
 msname: MS name
-tel: Telescope name (This name must be in the CASA Database (check in me.obslist() in casapy)
+tel: Telescope name (This name must be in the CASA Database (check in me.obslist() in casa)
      If its not there, then you will need to specify the telescope coordinates via "lon_lat"
 pos: Antenna positions. This can either a CASA table or an ASCII file. 
      (see simms --help for more on using an ascii file)
@@ -167,7 +167,7 @@ enebaling the --noup (-nu) option.
 
     casa_script = tempfile.NamedTemporaryFile(suffix='.py')
     casa_script.write("""
-# Auto Gen casapy script. From simms.py
+# Auto Gen casa script. From simms.py
 import os
 os.chdir('%s')
 execfile('%s/casasm.py')
@@ -203,7 +203,7 @@ execfile('%s/casasm.py')
     tmpfile = casa_script.name
     t0 = time.time()
     logfile = 'log-simms.txt'
-    command = ['casapy', '--nologger', '--log2term', 
+    command = ['casa', '--nologger', '--log2term', 
                   '%s'%('--nologfile' if nolog else '--logfile %s'%logfile),'-c',tmpfile]
     tmpdir = tempfile.mkdtemp(dir='.')
 

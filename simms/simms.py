@@ -373,7 +373,7 @@ def main():
         if (not args.tel) and (not args.lon_lat):
             parser.error('Either the telescope name (--tel/-T) or Telescope coordinate (-lle/--lon-lat )is required')
         
-        if args.tel.lower() in _ANTENNAS.keys():
+        if args.tel.lower() in _ANTENNAS.keys() and args.pos==None:
             telescope = _OBS[args.tel.lower()]
             antennas = "%s/observatories/%s"%(simms_path, _ANTENNAS[args.tel.lower()])
             _type = "ascii"

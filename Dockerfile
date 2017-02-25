@@ -1,15 +1,5 @@
-FROM radioastro/casa
-
-MAINTAINER gijsmolenaar@gmail.com
-
-RUN apt-get update && \
-    apt-get install -y \
-        python-pip \
-        python-casacore \
-        python-numpy \
-        python-pyfits \
-        && \
-    rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+FROM kernsuite/casa
+MAINTAINER <sphemakh@gmail.com>
 
 ADD . /tmp/simms
 

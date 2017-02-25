@@ -7,7 +7,7 @@ import argparse
 import time
 import tempfile
 import glob
-import numpy as np
+import math
 import json
 
 
@@ -199,7 +199,7 @@ execfile('%s/casasm.py')
         if scan_length[0] == 0:
             scan_length = [synthesis]
         else:
-            nscans = int( np.ceil( synthesis/float(scan_length[0]) ) )
+            nscans = int( math.ceil( synthesis/float(scan_length[0]) ) )
             scan_length = scan_length*nscans
 
     fmt = 'msname="%(msname)s", label="%(label)s", tel="%(tel)s", pos="%(pos)s", '\

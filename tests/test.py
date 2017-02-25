@@ -42,8 +42,6 @@ _run("casapy", ['--help','--log2term','--nologger','--nogui','--help','-c','quit
             message=message)
 
 # Finally see if we can run simms
-from simms import simms
-simms.create_empty_ms(msname="test.MS", tel="kat-7", pos="../simms/observatories/KAT7_ANTENNAS",
-                      synthesis=0.5, dtime=60)
+_run('simms', ['-T', 'kat-7', '-st', '8', '-dt', '10'])
 
 print "Done! All is good"

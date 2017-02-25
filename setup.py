@@ -3,6 +3,7 @@
 
 from setuptools import setup, find_packages
 from simms import __version__
+import os
 
 
 scripts = [
@@ -18,10 +19,10 @@ package_data = {'simms': [
 ]}
 
 
-requires = [
-    "numpy",
-    "python_casacore"
-]
+
+def requires():
+    with open(os.path.join('requirements.txt')) as f:
+        return [pname.strip() for pname in f.readlines()]
 
 
 setup(name="simms",
@@ -32,7 +33,7 @@ setup(name="simms",
       url="https://github.com/radio-astro/simms",
       packages=find_packages(),
       package_data=package_data,
-      install_requires=requires,
+      install_requires=requires(),
       scripts=scripts,
       license="GPL2",
       classifiers=[],

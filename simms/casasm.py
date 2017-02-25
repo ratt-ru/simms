@@ -228,7 +228,7 @@ def makems(msname=None,label=None,tel='MeerKAT',pos=None,pos_type='CASA',
         ref_time = me.epoch(epoch,date)
 
     sm.settimes(integrationtime = dtime,
-                usehourangle = True,
+                usehourangle = False if date else True,
                 referencetime = ref_time)
 
     me.doframe(ref_time)
@@ -260,9 +260,6 @@ def makems(msname=None,label=None,tel='MeerKAT',pos=None,pos_type='CASA',
         return msname
     else:
         os.system("rm -fr %s"%msname)
-
-
-
 
 
 def validate(msname):

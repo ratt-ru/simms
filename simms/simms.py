@@ -11,7 +11,6 @@ import numpy as np
 import json
 
 
-
 # I want to replace error() in argparse.ArgumentParser class
 # I do this so I can catch the exception raised when too few arguments
 # are parsed. 
@@ -78,7 +77,13 @@ _OBS = {
 }
 
 # possible combinations for specifying VLA configurations
-VLA_CONFS = ["vla"]+["vla-%s"%s for s in "abcd"] + ["vla%s"%s for s in "abcd"] + ["vla_%s"%s for s in "abcd"] + ["jvla_%s"%s for s in "abcd"] + ["jvla-%s"%s for s in "abcd"] + ["jvla%s"%s for s in "abcd"]
+VLA_CONFS = ["vla"]+["vla-%s"%s for s in "abcd"] + \
+    ["vla%s"%s for s in "abcd"] + \
+    ["vla_%s"%s for s in "abcd"] + \
+    ["jvla_%s"%s for s in "abcd"] + \
+    ["jvla-%s"%s for s in "abcd"] + \
+    ["jvla%s"%s for s in "abcd"]
+
 def which_vla(name):
     name = name.lower()
     if name in ["vla", "jvla"]:

@@ -11,7 +11,6 @@ import numpy as np
 import json
 
 
-
 # I want to replace error() in argparse.ArgumentParser class
 # I do this so I can catch the exception raised when too few arguments
 # are parsed. 
@@ -40,8 +39,6 @@ def abort(string,exception=SystemExit):
 
 class CasapyError(Exception):
     pass
-
-
 
 
 _ANTENNAS = { 
@@ -79,6 +76,22 @@ _OBS = {
      "ska1mid197": "meerkat",
 }
 
+# possible combinations for specifying VLA configurations
+VLA_CONFS = ["vla"]+["vla-%s"%s for s in "abcd"] + \
+    ["vla%s"%s for s in "abcd"] + \
+    ["vla_%s"%s for s in "abcd"] + \
+    ["jvla_%s"%s for s in "abcd"] + \
+    ["jvla-%s"%s for s in "abcd"] + \
+    ["jvla%s"%s for s in "abcd"]
+
+def which_vla(name):
+    name = name.lower()
+    if name in ["vla", "jvla"]:
+        return "jvla-d"
+    elif name in VLA_CONFS:
+        return "jvla-%s"%(name[-1])
+    else:
+        raise NameError("Telescope name could not recognised")
 
 
 def create_empty_ms(msname=None,label=None,tel=None,pos=None,pos_type='casa',
@@ -112,7 +125,9 @@ may not be specified; indicate that your file doesn't have this dimension by
 enebaling the --noup (-nu) option.
     """
 
+
     def toList(value, nchan=False):
+
         if isinstance(value, (tuple, list)):
             if len(value)==1:
                 value = value[0]
@@ -360,22 +375,35 @@ def main():
                 jdict[key] = str(val)
 
         tel = jdict["tel"]
-        if tel in _ANTENNAS.keys() and not jdict.get("pos", False):
-            jdict["tel"] = _OBS[tel]
-            jdict["pos"] = "%s/observatories/%s"%(simms_path, _ANTENNAS[tel])
+        print tel
+        if tel in _ANTENNAS.keys()+VLA_CONFS and not jdict.get("pos", False):
+            if tel[:-3] in ["vla", "jvl"]:
+                pos = which_vla(tel)
+                jdict["tel"] = "vla"
+                print pos
+                sys.exit(0)
+            else:
+                pos = jdict["tel"]
+            jdict["pos"] = "%s/observatories/%s"%(simms_path, _ANTENNAS[pos])
             jdict["pos_type"] = "ascii"
             jdict["coords"] = "itrf"
 
         simms(**jdict)
 
     else:
-
         if (not args.tel) and (not args.lon_lat):
             parser.error('Either the telescope name (--tel/-T) or Telescope coordinate (-lle/--lon-lat )is required')
-        
-        if args.tel.lower() in _ANTENNAS.keys() and args.pos==None:
-            telescope = _OBS[args.tel.lower()]
-            antennas = "%s/observatories/%s"%(simms_path, _ANTENNAS[args.tel.lower()])
+
+        telescope = args.tel.lower() 
+        if telescope in _ANTENNAS.keys()+VLA_CONFS and args.pos==None:
+            if telescope[:3] in ["vla", "jvl"] and args.pos in [None, False, ""]:
+                pos = which_vla(telescope)
+                telescope = "vla"
+            else:
+                pos = _OBS[args.tel.lower()]
+                telescope = _OBS[args.tel.lower()]
+            antennas = "%s/observatories/%s"%(simms_path, _ANTENNAS[pos])
+
             _type = "ascii"
             cs = "itrf"
         else:

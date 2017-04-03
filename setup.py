@@ -21,8 +21,9 @@ package_data = {'simms': [
 
 
 def requires():
-    with open(os.path.join('requirements.txt')) as f:
-        return [pname.strip() for pname in f.readlines()]
+#    with open(os.path.join('requirements.txt')) as f:
+#        return [pname.strip() for pname in f.readlines()]
+    return []
 
 
 setup(name="simms",

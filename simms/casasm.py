@@ -183,7 +183,8 @@ def makems(msname=None,label=None,tel='MeerKAT',pos=None,pos_type='CASA',
     sm.setlimits(shadowlimit=shadow_limit or 0,elevationlimit=elevation_limit or 0)
     sm.setauto(autocorrwt=1.0 if auto_corr else 0.0)
     sm.setfeed(mode=feed)
-
+    
+    use_ha = False
     multiple_starts = False
     if len(date)>1:
         nstarts = len(date)
@@ -217,6 +218,7 @@ def makems(msname=None,label=None,tel='MeerKAT',pos=None,pos_type='CASA',
                 epoch, date = "UTC", date
         else:
             epoch, date = "UTC", "2016/01/01"
+            use_ha = True
 
         start_times = [0] if date else [start_time*3600]
         stop_times = [start_times[0] + scan_length[0]*3600]
@@ -228,7 +230,7 @@ def makems(msname=None,label=None,tel='MeerKAT',pos=None,pos_type='CASA',
         ref_time = me.epoch(epoch,date)
 
     sm.settimes(integrationtime = dtime,
-                usehourangle = False if date else True,
+                usehourangle = use_ha,
                 referencetime = ref_time)
 
     me.doframe(ref_time)

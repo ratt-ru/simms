@@ -402,7 +402,7 @@ def main():
             else:
                 pos = _OBS[args.tel.lower()]
                 telescope = _OBS[args.tel.lower()]
-            antennas = "%s/observatories/%s"%(simms_path, _ANTENNAS[pos])
+            antennas = "%s/observatories/%s"%(simms_path, _ANTENNAS[args.tel.lower()])
 
             _type = "ascii"
             cs = "itrf"

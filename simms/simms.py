@@ -57,6 +57,7 @@ _ANTENNAS = {
      "wsrt": "wsrt.itrf.txt",
      "ska1mid254": "skamid254.itrf.txt",
      "ska1mid197": "skamid197.itrf.txt",
+     "lofar_nl"  : "lofar_nl.itrf.txt",
 }
 
 _OBS = { 
@@ -74,6 +75,7 @@ _OBS = {
      "wsrt": "wsrt",
      "ska1mid254": "meerkat",
      "ska1mid197": "meerkat",
+     "lofar_nl": "lofar",
 }
 
 # possible combinations for specifying VLA configurations

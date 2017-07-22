@@ -63,15 +63,6 @@ _ANTENNAS = {
 _OBS = { 
      "meerkat": "meerkat",
      "kat-7": "kat-7",
-     "jvla": "vla",
-     "vla": "vla",
-     "jvla-a": "vla",
-     "jvla-b": "vla",
-     "jvla-c": "vla",
-     "jvla-d": "vla",
-     "vla-b": "vla",
-     "vla-c": "vla",
-     "vla-d": "vla",
      "wsrt": "wsrt",
      "ska1mid254": "meerkat",
      "ska1mid197": "meerkat",
@@ -377,13 +368,10 @@ def main():
                 jdict[key] = str(val)
 
         tel = jdict["tel"]
-        print tel
         if tel in _ANTENNAS.keys()+VLA_CONFS and not jdict.get("pos", False):
             if tel[:-3] in ["vla", "jvl"]:
                 pos = which_vla(tel)
                 jdict["tel"] = "vla"
-                print pos
-                sys.exit(0)
             else:
                 pos = jdict["tel"]
             jdict["pos"] = "%s/observatories/%s"%(simms_path, _ANTENNAS[pos])
@@ -404,7 +392,7 @@ def main():
             else:
                 pos = _OBS[args.tel.lower()]
                 telescope = _OBS[args.tel.lower()]
-            antennas = "%s/observatories/%s"%(simms_path, _ANTENNAS[args.tel.lower()])
+            antennas = "%s/observatories/%s"%(simms_path, _ANTENNAS[telescope])
 
             _type = "ascii"
             cs = "itrf"

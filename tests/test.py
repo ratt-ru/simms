@@ -3,8 +3,7 @@ import sys
 import os
 
 message = """
-Cannot find casapy in your system. Find casapy 4.2.2 at:
-https://svn.cv.nrao.edu/casa/linux_distro/old/casapy-42.2.30986-1-64b.tar.gz
+Cannot find casapy in your system:
 
 Installation instructions are at:
 http://casa.nrao.edu/installlinux.shtml
@@ -38,7 +37,7 @@ def _run(command, options, message=None, shell=True):
 _run("simms", ["--help"], message="Something went wrong with the installation")
 
 # check if casapy is installed
-_run("casapy", ['--help','--log2term','--nologger','--nogui','--help','-c','quit'], 
+_run("casa", ['--help','--log2term','--nologger','--nogui','--help','-c','quit'], 
             message=message)
 
 # Finally see if we can run simms

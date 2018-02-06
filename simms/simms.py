@@ -391,8 +391,8 @@ def main():
                 telescope = "vla"
             else:
                 pos = _OBS[args.tel.lower()]
-                telescope = _OBS[args.tel.lower()]
-            antennas = "%s/observatories/%s"%(simms_path, _ANTENNAS[telescope])
+                telescope = _OBS[pos]
+            antennas = "%s/observatories/%s"%(simms_path, _ANTENNAS[pos])
 
             _type = "ascii"
             cs = "itrf"
@@ -401,7 +401,6 @@ def main():
              telescope = args.tel
              _type = args.type
              cs = args.coords
-
 
 
         simms(msname=args.name,label=args.label,tel=telescope,pos=antennas,feed=args.feed,

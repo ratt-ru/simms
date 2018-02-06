@@ -8,3 +8,6 @@ Changes since 0.6.0
 
 # 1.0.2
 - Update meerkat antenna coordinates
+
+# 1.0.3
+- Fix interface to when auto-setting VLA configurations.

@@ -79,8 +79,15 @@ def makems(msname=None,label=None,tel='MeerKAT',pos=None,pos_type='CASA',
         try: return float(val)
         except TypeError: return val
 
+    _multiple_starts = False
+    use_ha = False
     if isinstance(scan_length, (tuple, list)):
-        scan_length = map(float, scan_length)
+        scan_length = map(lambda a:float(a)*3600, scan_length)
+        start_times = [-sl/2.0 for sl in scan_length]
+        stop_times = [start_t + sl for start_t,sl in zip(start_times, scan_length)]
+        _multiple_starts = True
+        use_ha = True
+        ref_time = me.epoch("UTC","2016/01/01")
     else:
         if scan_length > synthesis or scan_length is 0:
             print 'SIMMS ## WARN: Scan length > synthesis time or its not set, setiing scan_length=syntheis'
@@ -89,8 +96,9 @@ def makems(msname=None,label=None,tel='MeerKAT',pos=None,pos_type='CASA',
         nscans = int( numpy.ceil(synthesis/float(scan_length)) )
 
         scan_length = [scan_length]*nscans
+        use_ha = True
 
-    start_time = toFloat(start_time) or -scan_length[0]/2
+        start_time = toFloat(start_time) or -scan_length[0]/2
  
     if not isinstance(dtime,str):
         dtime = '%ds'%dtime
@@ -183,8 +191,7 @@ def makems(msname=None,label=None,tel='MeerKAT',pos=None,pos_type='CASA',
     sm.setlimits(shadowlimit=shadow_limit or 0,elevationlimit=elevation_limit or 0)
     sm.setauto(autocorrwt=1.0 if auto_corr else 0.0)
     sm.setfeed(mode=feed)
-    
-    use_ha = False
+
     multiple_starts = False
     if len(date)>1:
         nstarts = len(date)
@@ -209,7 +216,7 @@ def makems(msname=None,label=None,tel='MeerKAT',pos=None,pos_type='CASA',
             start_times.append(diff)
             stop_times.append(diff + scan*3600.)
 
-    else:
+    elif not _multiple_starts:
         if date :
             date = date[0]
             if len(date.split(",")) > 1:
@@ -235,6 +242,7 @@ def makems(msname=None,label=None,tel='MeerKAT',pos=None,pos_type='CASA',
 
     me.doframe(ref_time)
     me.doframe(obs_pos)
+    print start_times, stop_times
     for ddid in range(nbands):
         for start,stop in zip(start_times,stop_times):
             for fid in range(nfields):

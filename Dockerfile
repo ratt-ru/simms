@@ -1,4 +1,4 @@
-FROM kernsuite/casa:2
+FROM stimela/casa:0.3.1
 MAINTAINER <sphemakh@gmail.com>
 
 ADD . /tmp/simms

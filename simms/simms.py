@@ -312,7 +312,7 @@ def main():
             help='Declination in dms or val[unit]: default is -30d0m0s')
     add('-st','--synthesis-time',dest='synthesis',default=4,type=float,
             help='Synthesis time in hours: default is 4.0')
-    add('-sl','--scan-length',dest='scan_length',type=str,
+    add('-sl','--scan-length',action='append',dest='scan_length',type=str,
             help='Synthesis time in hours: default is the sysntheis time')
     add('-dt','--dtime',dest='dtime',default=10,type=int,
             help='Integration time in seconds : default is 10s')

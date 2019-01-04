@@ -281,7 +281,7 @@ def main():
             help='Synthesis time in hours: default is 4.0')
     add('-sl','--scan-length',action='append',dest='scan_length',type=str,
             help='Synthesis time in hours: default is the sysntheis time')
-    add('-dt','--dtime',dest='dtime',default=10,type=int,
+    add('-dt','--dtime',dest='dtime',default=10,type=float,
             help='Integration time in seconds : default is 10s')
     add('-ih','--init-ha',dest='init_ha',default=None,
             help='Initial hour angle for observation. If not specified '

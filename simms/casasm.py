@@ -153,7 +153,7 @@ def makems(msname=None,label=None,tel='MeerKAT',pos=None,pos_type='CASA',
     # set date to today (start of observation) if not set by user
     # The actual start time will be set internally by CASA depending on when the field transits
     use_ha = False
-    if date is None:
+    if date in (None, "None"):
         td = time.gmtime()
         date = "UTC,{0:d}/{1:d}/{02:d}".format(td.tm_year, td.tm_mon, td.tm_mday)
         use_ha = True

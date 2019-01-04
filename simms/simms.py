@@ -118,47 +118,27 @@ may not be specified; indicate that your file doesn't have this dimension by
 enebaling the --noup (-nu) option.
     """
 
+    def toList_freq(item, nounits=False):
+        items = item.split(",")
+        if nounits:
+            return map(int, items)
+        else:
+            try:
+                items = map(float, items)
+                return [ "{:.4g}MHz".format(val/1e6) for val in items ]
+            except ValueError:
+                return items
 
-    def toList(value, nchan=False):
 
-        if isinstance(value, (tuple, list)):
-            if len(value)==1:
-                value = value[0]
-        if isinstance(value, str):
-            string = value.split(",")
-            if len(string)>1:
-                return map(int, string) if nchan else string
-            else:
-                return int(value) if nchan else value
-        elif isinstance(value, (int, float)):
-            return value if nchan else "%fMHz"%(value/1e6)
-            
-    dfreq = toList(dfreq)
-    freq0 = toList(freq0)
-    nchan = toList(nchan, nchan=True)
+    freq0 = toList_freq(freq0)
+    dfreq = toList_freq(dfreq)
+    nchan = toList_freq(nchan, nounits=True)
 
-    if nbands==1 and isinstance(nchan, (list, tuple)):
-        nbands = len(nchan)
-        
-    if nbands>1:
-        if isinstance(freq0, str):
-            freq0 = [freq0]*nbands
-        if isinstance(dfreq, str):
-            dfreq = [dfreq]*nbands
-        if isinstance(nchan, int):
-            nchan = [nchan]*nbands
-    else:
-         freq0 = [freq0]
-         dfreq = [dfreq]
-         nchan = [nchan]
-
+    
     if direction in [None,[],()]:
         direction = ','.join(['J2000',ra,dec])
     if isinstance(direction,str):
         direction = [direction]
-
-    if date is None:
-        date = ['UTC,%d/%d/%d'%(time.localtime()[:3])]
 
     if msname is None:
         msname = '%s_%dh%ss.MS'%(label or tel,synthesis,dtime)
@@ -181,19 +161,6 @@ os.chdir('%s')
 execfile('%s/casasm.py')
 """%(cdir,simms_path) )
 
-    if isinstance(scan_length, (str, int, float)):
-        if isinstance(scan_length, str):
-            scan_length = map(float, scan_length.split(","))
-        else:
-            scan_length = [scan_length]
-
-    scan_length = scan_length or [0]
-    if len(scan_length)==1:
-        if scan_length[0] == 0:
-            scan_length = [synthesis]
-        else:
-            nscans = int( math.ceil( synthesis/float(scan_length[0]) ) )
-            scan_length = scan_length*nscans
 
     fmt = 'msname="%(msname)s", label="%(label)s", tel="%(tel)s", pos="%(pos)s", '\
           'pos_type="%(pos_type)s", synthesis=%(synthesis).4g, '\
@@ -201,7 +168,7 @@ execfile('%s/casasm.py')
           'nchan=%(nchan)s, stokes="%(stokes)s", start_time=%(start_time)s, setlimits=%(setlimits)s, '\
           'elevation_limit=%(elevation_limit)f, shadow_limit=%(shadow_limit)f, '\
           'coords="%(coords)s",lon_lat="%(lon_lat)s", noup=%(noup)s, nbands=%(nbands)d, '\
-          'direction=%(direction)s, outdir="%(outdir)s",date=%(date)s,fromknown=%(fromknown)s, '\
+          'direction=%(direction)s, outdir="%(outdir)s",date="%(date)s",fromknown=%(fromknown)s, '\
           'feed="%(feed)s",scan_lag=%(scan_lag).4g,auto_corr=%(auto_corr)s'%locals()
 
     info("Simms >>: %s"%fmt)
@@ -336,7 +303,7 @@ def main():
             help='Polarization : default is XX XY YX YY')
     add('-feed','--feed',dest='feed',default='perfect X Y',
             help='Polarization : default is "perfect X Y" ')
-    add('-date','--date',dest='date',metavar="EPOCH,yyyy/mm/dd[/h:m:s]",action="append",default=[],
+    add('-date','--date',dest='date',metavar="EPOCH,yyyy/mm/dd[/h:m:s]",
             help='Date of observation. Example "UTC,2014/05/26" or "UTC,2014/05/26/12:12:12" : default is today')
     add('-slg','--scan-lag',default=0,type=float,
             help="Lag time between scans. In hrs: default is 0")

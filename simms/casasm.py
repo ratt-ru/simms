@@ -79,27 +79,7 @@ def makems(msname=None,label=None,tel='MeerKAT',pos=None,pos_type='CASA',
         try: return float(val)
         except TypeError: return val
 
-    _multiple_starts = False
-    use_ha = False
-    if isinstance(scan_length, (tuple, list)):
-        scan_length = map(lambda a:float(a)*3600, scan_length)
-        start_times = [-sl/2.0 for sl in scan_length]
-        stop_times = [start_t + sl for start_t,sl in zip(start_times, scan_length)]
-        _multiple_starts = True
-        use_ha = True
-        ref_time = me.epoch("UTC","2016/01/01")
-    else:
-        if scan_length > synthesis or scan_length is 0:
-            print 'SIMMS ## WARN: Scan length > synthesis time or its not set, setiing scan_length=syntheis'
-            scan_length = synthesis
 
-        nscans = int( numpy.ceil(synthesis/float(scan_length)) )
-
-        scan_length = [scan_length]*nscans
-        use_ha = True
-
-        start_time = toFloat(start_time) or -scan_length[0]/2
- 
     if not isinstance(dtime,str):
         dtime = '%ds'%dtime
     
@@ -124,7 +104,6 @@ def makems(msname=None,label=None,tel='MeerKAT',pos=None,pos_type='CASA',
     obs_pos = obs_pos or me.observatory(tel)
     me.doframe(obs_pos)
 
-
     sm.open(msname)
 
     if fromknown:
@@ -147,10 +126,9 @@ def makems(msname=None,label=None,tel='MeerKAT',pos=None,pos_type='CASA',
                 ncols = 6
             dtype = ['float']*ncols
             dtype[-2:] = ['|S20']*2
-            pos = np.genfromtxt(pos,names=names,dtype=dtype,usecols=range(ncols))
-  
-            xx,yy,zz = pos['x'], pos['y'], zz if noup else pos['z']
 
+            pos = np.genfromtxt(pos,names=names,dtype=dtype,usecols=range(ncols))
+            xx,yy,zz = pos['x'], pos['y'], zz if noup else pos['z']
             dish_diam,station,mount = pos['dd'],pos['station'],pos['mount']
 
         coord_sys = dict(itrf="global", enu="local", wgs84="longlat")
@@ -164,93 +142,92 @@ def makems(msname=None,label=None,tel='MeerKAT',pos=None,pos_type='CASA',
                      coordsystem= coord_sys.get(coords,'global'),
                      antname = list(station),
                      referencelocation=obs_pos)
-
     else:
         raise RuntimeError('Observatory name is not known, please provide antenna configuration') 
 
-    if len(freq0)>1:
-        if freq0[0]==freq0[-1]:
-            for i, df in enumerate(dfreq[1:], 1):
-                df = me.frequency("rest", df)["m0"]["value"]
-                f0 = me.frequency("rest", freq0[i-1])["m0"]["value"]
-                freq0[i] = "%fMHz"%( (f0 + df)/1e6)
-  
-    for i,(freq,df,nc) in enumerate( zip(freq0,dfreq,nchan) ): 
-        sm.setspwindow(spwname = '%02d'%i,
-                   freq = freq,
-                   deltafreq = df,
-                   freqresolution = df,
-                   nchannels = nc,
-                   stokes= stokes)
-
-    nfields = len(direction)
-    for fid,field in enumerate(direction):
-        field = field.split(',')
-        sm.setfield(sourcename='%02d'%fid,sourcedirection=me.direction(*field))
-
-    sm.setlimits(shadowlimit=shadow_limit or 0,elevationlimit=elevation_limit or 0)
-    sm.setauto(autocorrwt=1.0 if auto_corr else 0.0)
+#    if shadow_limit or elevationlimit:
+#        sm.setlimits(shadowlimit=shadow_limit or 0,elevationlimit=elevation_limit or 0)
+#    sm.setauto(autocorrwt=1.0 if auto_corr else 0.0)
     sm.setfeed(mode=feed)
 
-    multiple_starts = False
-    if len(date)>1:
-        nstarts = len(date)
-        ref_times = []
-        multiple_starts = True
+    # set date to today (start of observation) if not set by user
+    # The actual start time will be set internally by CASA depending on when the field transits
+    use_ha = False
+    if date is None:
+        td = time.gmtime()
+        date = "UTC,{0:d}/{1:d}/{02:d}".format(td.tm_year, td.tm_mon, td.tm_mday)
+        use_ha = True
 
-        for _date in date:
-            if len(_date.split(",")) > 1:
-                epoch, _date = _date.split(",") 
-            else:
-                epoch, _date = "UTC", _date
-
-            ref_times.append( me.epoch(epoch,_date) )
-
-    if multiple_starts:
-        start_times = [start_time*3600]
-        stop_times = [start_times[0] + scan_length[0]*3600]
-
-        ref_time = ref_times[0]
-        for stime,scan in zip(ref_times[1:], scan_length[1:]):
-            diff = start_times[0] + (stime["m0"]["value"] - ref_time["m0"]["value"])*24*3600
-            start_times.append(diff)
-            stop_times.append(diff + scan*3600.)
-
-    elif not _multiple_starts:
-        if date :
-            date = date[0]
-            if len(date.split(",")) > 1:
-                epoch, date = date.split(",")
-            else:
-                epoch, date = "UTC", date
-        else:
-            epoch, date = "UTC", "2016/01/01"
-            use_ha = True
-
-        start_times = [0] if date else [start_time*3600]
-        stop_times = [start_times[0] + scan_length[0]*3600]
-
-        for i, stime in enumerate(scan_length[1:], 1):
-            start_times.append( start_times[i-1]  + (stime + scan_lag)*3600)
-            stop_times.append( stop_times[i-1] + (scan_lag + stime)*3600)
-
-        ref_time = me.epoch(epoch,date)
-
+    # set reference time
+    epoch, date = date.split(",")
+    reftime = me.epoch(epoch, date)
+    me.doframe(reftime)
     sm.settimes(integrationtime = dtime,
                 usehourangle = use_ha,
-                referencetime = ref_time)
+                referencetime = reftime)
 
-    me.doframe(ref_time)
+    ndir = len(direction)
+    if scan_length:
+        scan_length = [ float(sl)*3600 for sl in scan_length ]
+        nscans = len(scan_length)
+    else:
+        nscans = 0
+
+    synthesis *= 3600
+    if ndir>=1:
+        # if scan legth is not set, set it to equal the synthesis time
+        if nscans == 0:
+            scan_length = [synthesis*1.0/ndir]*ndir
+            nscans = ndir
+        while ndir > nscans:
+          scan_length.append(scan_length[-1])
+
+    # Set spectral window information
+    if nbands > 1 and len(freq0) >1:
+        nbands = len(freq0)
+    elif nbands > 1 and len(freq0)==1:
+        _freq0 = me.frequency("rest", freq0[0])["m0"]["value"]
+        _dfreq = me.frequency("rest", dfreq)["m0"]["value"]
+        bw = _dfreq*nchan + _freq0
+        for band in range(1, nbands):
+            __freq0 = "{:.4f}MHz".format(_freq + band*bw)
+            freq0.append(__freq0)
+    else:
+        nbands = len(freq0)
+
+    while len(nchan) < nbands:
+        nchan.append(nchan[-1])
+    while len(dfreq) < nbands:
+            dfreq.append(dfreq[-1])
+
+    for i,(freq,df,nc) in enumerate( zip(freq0,dfreq,nchan) ):
+        bname = '{0:02d}'.format(i)
+        sm.setspwindow(spwname = bname,
+               freq = freq,
+               deltafreq = df,
+               freqresolution = df,
+               nchannels = nc,
+               stokes= stokes)
+
+        # Set field information
+        start_time = 0.0
+        for fid,field in enumerate(direction):
+            field = field.split(",")
+            fname = sourcename="{0:02d}".format(fid)
+            sm.setfield(sourcename=fname,
+                        sourcedirection=me.direction(*field))
+
+            for sl in scan_length:
+                stop_time = start_time + sl
+                sm.observe('{:02d}'.format(fid), '{:02d}'.format(i),
+                        starttime=start_time,stoptime=stop_time)
+                start_time += sl
+
+    me.doframe(reftime)
     me.doframe(obs_pos)
-    print start_times, stop_times
-    for ddid in range(nbands):
-        for start,stop in zip(start_times,stop_times):
-            for fid in range(nfields):
-                sm.observe('%02d'%fid,'%02d'%ddid,
-                           starttime=start,stoptime=stop)
 
     if sm.done():
-        print "Empty MS '%s' created"%msname
+        print "Empty MS '{}' created".format(msname)
     else:
          raise RuntimeError('Failed to create MS. Look at the log file. '
                             'Double check you settings. If you feel this '

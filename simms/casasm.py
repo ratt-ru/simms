@@ -145,9 +145,9 @@ def makems(msname=None,label=None,tel='MeerKAT',pos=None,pos_type='CASA',
     else:
         raise RuntimeError('Observatory name is not known, please provide antenna configuration') 
 
-#    if shadow_limit or elevationlimit:
-#        sm.setlimits(shadowlimit=shadow_limit or 0,elevationlimit=elevation_limit or 0)
-#    sm.setauto(autocorrwt=1.0 if auto_corr else 0.0)
+    if shadow_limit or elevation_limit:
+        sm.setlimits(shadowlimit=shadow_limit or 0,elevationlimit=elevation_limit or 0)
+    sm.setauto(autocorrwt=1.0 if auto_corr else 0.0)
     sm.setfeed(mode=feed)
 
     # set date to today (start of observation) if not set by user

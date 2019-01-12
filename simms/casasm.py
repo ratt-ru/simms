@@ -174,6 +174,12 @@ def makems(msname=None,label=None,tel='MeerKAT',pos=None,pos_type='CASA',
         nscans = 0
 
     synthesis *= 3600
+
+    if nscans == 1 and scan_length[0] < synthesis:
+        nscans = np.int( np.ceil( synthesis/scan_length[0] ) )
+        scan_length = scan_length*(nscans -0)
+    
+
     if ndir>=1:
         # if scan legth is not set, set it to equal the synthesis time
         if nscans == 0:

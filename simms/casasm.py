@@ -173,7 +173,15 @@ def makems(msname=None,label=None,tel='MeerKAT',pos=None,pos_type='CASA',
     else:
         nscans = 0
 
+
     synthesis *= 3600
+
+    if nscans == 1 and scan_length[0] < synthesis:
+        nscans = np.int( np.ceil( synthesis/scan_length[0] ) )
+        scan_length = scan_length*(nscans)
+    
+    print sum(scan_length)/3600.0
+
     if ndir>=1:
         # if scan legth is not set, set it to equal the synthesis time
         if nscans == 0:
@@ -232,16 +240,6 @@ def makems(msname=None,label=None,tel='MeerKAT',pos=None,pos_type='CASA',
          raise RuntimeError('Failed to create MS. Look at the log file. '
                             'Double check you settings. If you feel this '
                             'is due a to bug, raise an issue on https://github.com/SpheMakh/simms')
-
-    # Clear all flags if limits were not  set
-    if not setlimits:
-        tb.open(msname, nomodify=False)
-        flags = tb.getcol("FLAG")
-        if flags.sum() > 0:
-            flags[...] = False
-            tb.putcol("FLAG", flags)
-        tb.close()
-
 
     if validate(msname):
         return msname

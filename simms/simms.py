@@ -89,10 +89,11 @@ def which_vla(name):
 
 def create_empty_ms(msname=None,label=None,tel=None,pos=None,pos_type='casa',
           ra='0h0m0s',dec='-30d0m0s',synthesis=4,scan_length=[0],dtime=10,freq0=700e6,
-          dfreq=50e6,nchan=1,stokes='XX XY YX YY',start_time=-2,setlimits=False,
+          dfreq=50e6,nchan=1,stokes='XX XY YX YY',setlimits=False,
           elevation_limit=0,shadow_limit=0,outdir=None,nolog=False,
           coords='itrf',lon_lat=None,noup=False,nbands=1,direction=[],date=None,
-          fromknown=False,feed="perfect X Y",scan_lag=0, auto_corr=False):
+          fromknown=False,feed="perfect X Y",scan_lag=0, auto_corr=False,
+          optimise_start=None):
 
     """ 
 Uses the CASA simulate tool to create an empty measurement set. Requires
@@ -165,11 +166,11 @@ execfile('%s/casasm.py')
     fmt = 'msname="%(msname)s", label="%(label)s", tel="%(tel)s", pos="%(pos)s", '\
           'pos_type="%(pos_type)s", synthesis=%(synthesis).4g, '\
           'scan_length=%(scan_length)s, dtime="%(dtime)s", freq0=%(freq0)s, dfreq=%(dfreq)s, '\
-          'nchan=%(nchan)s, stokes="%(stokes)s", start_time=%(start_time)s, setlimits=%(setlimits)s, '\
+          'nchan=%(nchan)s, stokes="%(stokes)s", setlimits=%(setlimits)s, '\
           'elevation_limit=%(elevation_limit)f, shadow_limit=%(shadow_limit)f, '\
           'coords="%(coords)s",lon_lat="%(lon_lat)s", noup=%(noup)s, nbands=%(nbands)d, '\
           'direction=%(direction)s, outdir="%(outdir)s",date="%(date)s",fromknown=%(fromknown)s, '\
-          'feed="%(feed)s",scan_lag=%(scan_lag).4g,auto_corr=%(auto_corr)s'%locals()
+          'feed="%(feed)s",scan_lag=%(scan_lag).4g,auto_corr=%(auto_corr)s,optimise_start=%(optimise_start)s'%locals()
 
     info("Simms >>: %s"%fmt)
     casa_script.write('makems(%s)\nexit'%fmt)
@@ -285,7 +286,7 @@ def main():
             help='Integration time in seconds : default is 10s')
     add('-ih','--init-ha',dest='init_ha',default=None,
             help='Initial hour angle for observation. If not specified '
-                 'we use -[scan_length/2]')
+                 'we use -[scan_length/2]:: DEPRECATED')
     add('-nc','--nchan',dest='nchan',default='1',
             help='Number of frequency channels. Specify as comma separated list ' 
                  ' (for multiple subbands); see also --freq0, --dfreq: default is 1')
@@ -305,8 +306,10 @@ def main():
             help='Polarization : default is "perfect X Y" ')
     add('-date','--date',dest='date',metavar="EPOCH,yyyy/mm/dd[/h:m:s]",
             help='Date of observation. Example "UTC,2014/05/26" or "UTC,2014/05/26/12:12:12" : default is today')
+    add('-os','--optimise-start', action="store_true",
+            help='Modify observation start time to maximise source visibility.')
     add('-slg','--scan-lag',default=0,type=float,
-            help="Lag time between scans. In hrs: default is 0")
+            help="Lag time between scans. In hrs: default is 0:: DEPRECATED")
     add('-stl','--set-limits',dest='set_limits',action='store_true',
             help='Set telescope limits; elevation and shadow limts : not the default')
     add('-el','--elevation-limit',dest='elevation_limit',type=float,default=0,
@@ -373,8 +376,9 @@ def main():
         simms(msname=args.name,label=args.label,tel=telescope,pos=antennas,feed=args.feed,
               pos_type=_type,ra=args.ra,dec=args.dec,synthesis=args.synthesis,scan_length=args.scan_length,
               dtime=args.dtime,freq0=args.freq0,dfreq=args.dfreq,nchan=args.nchan,
-              stokes=args.pol,start_time=args.init_ha,setlimits=args.set_limits,
+              stokes=args.pol,setlimits=args.set_limits,
               elevation_limit=args.elevation_limit,shadow_limit=args.shadow_limit,
               outdir=args.outdir,coords=cs,lon_lat=args.lon_lat,noup=args.noup,
               direction=args.direction,nbands=args.nband,date=args.date,
-              fromknown=args.knownconfig,scan_lag=args.scan_lag,auto_corr=args.auto_corr)
+              fromknown=args.knownconfig,scan_lag=args.scan_lag,auto_corr=args.auto_corr,
+              optimise_start=args.optimise_start)

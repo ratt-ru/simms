@@ -183,8 +183,6 @@ def makems(msname=None,label=None,tel='MeerKAT',pos=None,pos_type='CASA',
         nscans = np.int( np.ceil( synthesis/scan_length[0] ) )
         scan_length = scan_length*(nscans)
     
-    print sum(scan_length)/3600.0
-
     if ndir>=1:
         # if scan legth is not set, set it to equal the synthesis time
         if nscans == 0:

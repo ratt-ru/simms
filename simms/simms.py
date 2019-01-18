@@ -193,6 +193,7 @@ execfile('%s/casasm.py')
                   stdout=subprocess.PIPE if not isinstance(sys.stdout,file) else sys.stdout,
                   shell=True)
 
+    failed = False
     if process.stdout or process.stderr:
         out,err = process.communicate()
         sys.stdout.write(out)
@@ -202,6 +203,7 @@ execfile('%s/casasm.py')
         process.wait()
     if process.returncode:
         print 'ERROR: simms.py returns errr code %d. %s'%(process.returncode, message)
+        failed = True
 
     casa_script.close()
     os.system('mv %s/%s . && rm -fr %s'%(tmpdir,logfile,tmpdir) )
@@ -222,7 +224,7 @@ execfile('%s/casasm.py')
             std.write('\n %s ::: %s\n%s\n'%(ts," ".join(command),ran))
             std.write("Parameters: %s\n"%fmt)
 
-    if os.path.exists(msname):
+    if os.path.exists(msname) and failed==False:
         info("simms succeeded")
     else:
         raise CasapyError(message)

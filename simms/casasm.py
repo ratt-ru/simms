@@ -52,20 +52,20 @@ def makems(msname=None,label=None,tel='MeerKAT',pos=None,pos_type='CASA',
            scan_length=0,dtime=10,
            freq0=700e6,dfreq=50e6,nchan=1,
            nbands=1,
-           start_time=None,
            stokes='RR RL LR LL',
            feed="perfect R L",
            noise=0,
-           setlimits=False,
+           setlimits=False, # Deprecated
            elevation_limit=None,
            shadow_limit=None,
            outdir=None,
            coords='itrf',           
            lon_lat=None,
+           optimise_start=False,
            date=None,
            noup=False,
            auto_corr=False,
-           scan_lag=0):
+           scan_lag=0): # Deprecated
     """ Creates an empty measurement set using CASA simulate (sm) tool. """
 
 
@@ -152,7 +152,10 @@ def makems(msname=None,label=None,tel='MeerKAT',pos=None,pos_type='CASA',
 
     # set date to today (start of observation) if not set by user
     # The actual start time will be set internally by CASA depending on when the field transits
-    use_ha = False
+    if optimise_start:
+        use_ha = True
+    else:
+        use_ha = False
     if date in (None, "None"):
         td = time.gmtime()
         date = "UTC,{0:d}/{1:d}/{02:d}".format(td.tm_year, td.tm_mon, td.tm_mday)
@@ -180,8 +183,6 @@ def makems(msname=None,label=None,tel='MeerKAT',pos=None,pos_type='CASA',
         nscans = np.int( np.ceil( synthesis/scan_length[0] ) )
         scan_length = scan_length*(nscans)
     
-    print sum(scan_length)/3600.0
-
     if ndir>=1:
         # if scan legth is not set, set it to equal the synthesis time
         if nscans == 0:

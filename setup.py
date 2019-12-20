@@ -19,11 +19,6 @@ package_data = {'simms': [
 ]}
 
 
-def requires():
-#    with open(os.path.join('requirements.txt')) as f:
-#        return [pname.strip() for pname in f.readlines()]
-    return []
-
 setup(name="simms",
       version=__version__,
       description="Empty MS creation tool",
@@ -32,7 +27,7 @@ setup(name="simms",
       url="https://github.com/radio-astro/simms",
       packages=find_packages(),
       package_data=package_data,
-      install_requires=requires(),
+      install_requires=[],
       scripts=scripts,
       license="GPL2",
       classifiers=[],

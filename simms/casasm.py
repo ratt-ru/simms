@@ -219,7 +219,7 @@ def makems(msname=None,label=None,tel='MeerKAT',pos=None,pos_type='CASA',
                stokes= stokes)
 
         # Set field information
-        start_time = 0.0
+        start_time = 0.0 - sum(scan_length)/2.0
         for fid,field in enumerate(direction):
             field = field.split(",")
             fname = sourcename="{0:02d}".format(fid)
@@ -236,7 +236,7 @@ def makems(msname=None,label=None,tel='MeerKAT',pos=None,pos_type='CASA',
     me.doframe(obs_pos)
 
     if sm.done():
-        print "Empty MS '{}' created".format(msname)
+        print("Empty MS '{}' created".format(msname))
     else:
          raise RuntimeError('Failed to create MS. Look at the log file. '
                             'Double check you settings. If you feel this '
@@ -251,7 +251,7 @@ def makems(msname=None,label=None,tel='MeerKAT',pos=None,pos_type='CASA',
 def validate(msname):
 
     # Run a few tests on the MS, see if its valid.
-    print "Validating %s ..."%msname
+    print("Validating %s ..."%msname)
     validated = False
 
     try:
@@ -276,8 +276,7 @@ def validate(msname):
         return False
     
     if validated:
-        print "MS validated"
+        print("MS validated")
         return True
     else:
         return False
-

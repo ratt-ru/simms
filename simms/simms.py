@@ -1,4 +1,4 @@
-## Sphesihle Makhathini <sphemakh@gmail.com>
+# Sphesihle Makhathini <sphemakh@gmail.com>
 
 import os
 import sys
@@ -9,92 +9,102 @@ import tempfile
 import glob
 import math
 import json
+import logging
+import io
+import shlex
 
 
 # I want to replace error() in argparse.ArgumentParser class
 # I do this so I can catch the exception raised when too few arguments
-# are parsed. 
-class ParserError(Exception): 
+# are parsed.
+class ParserError(Exception):
     pass
+
+
 class ArgumentParser(argparse.ArgumentParser):
     def error(self, message):
         raise ParserError(message or 'Not enough Arguments')
 
+
 # set simms directory
 simms_path = os.path.realpath(__file__)
 simms_path = os.path.dirname(simms_path)
-execfile("%s/__init__.py"%simms_path)
+exec(compile(open("%s/__init__.py" % simms_path, "rb").read(),
+             "%s/__init__.py" % simms_path, 'exec'))
 
 # Communication functions
-def info(string):
-    t = "%d/%d/%d %d:%d:%d"%(time.localtime()[:6])
-    print "%s ##INFO: %s"%(t,string)
-def warn(string):
-    t = "%d/%d/%d %d:%d:%d"%(time.localtime()[:6])
-    print "%s ##WARNING: %s"%(t,string)
 
-def abort(string,exception=SystemExit):
-    t = "%d/%d/%d %d:%d:%d"%(time.localtime()[:6])
-    raise exception("%s ##ABORTING: %s"%(t,string))
+
+def info(string):
+    logging.info(string)
+
+
+def warn(string):
+    logging.warn(string)
+
+
+def abort(string):
+    logging.abort(string)
+
 
 class CasapyError(Exception):
     pass
 
 
-_ANTENNAS = { 
-     "meerkat": "meerkat.itrf.txt",
-     "kat-7": "kat-7.itrf.txt",
-     "jvla": "vlad.itrf.txt",
-     "vla": "vlad.itrf.txt",
-     "jvla-a": "vlaa.itrf.txt",
-     "jvla-b": "vlab.itrf.txt",
-     "jvla-c": "vlac.itrf.txt",
-     "jvla-d": "vlad.itrf.txt",
-     "vla-a": "vlaa.itrf.txt",
-     "vla-b": "vlab.itrf.txt",
-     "vla-c": "vlac.itrf.txt",
-     "vla-d": "vlad.itrf.txt",
-     "wsrt": "wsrt.itrf.txt",
-     "ska1mid254": "skamid254.itrf.txt",
-     "ska1mid197": "skamid197.itrf.txt",
-     "lofar_nl"  : "lofar_nl.itrf.txt",
+_ANTENNAS = {
+    "meerkat": "meerkat.itrf.txt",
+    "kat-7": "kat-7.itrf.txt",
+    "jvla": "vlad.itrf.txt",
+    "vla": "vlad.itrf.txt",
+    "jvla-a": "vlaa.itrf.txt",
+    "jvla-b": "vlab.itrf.txt",
+    "jvla-c": "vlac.itrf.txt",
+    "jvla-d": "vlad.itrf.txt",
+    "vla-a": "vlaa.itrf.txt",
+    "vla-b": "vlab.itrf.txt",
+    "vla-c": "vlac.itrf.txt",
+    "vla-d": "vlad.itrf.txt",
+    "wsrt": "wsrt.itrf.txt",
+    "ska1mid254": "skamid254.itrf.txt",
+    "ska1mid197": "skamid197.itrf.txt",
+    "lofar_nl": "lofar_nl.itrf.txt",
 }
 
-_OBS = { 
-     "meerkat": "meerkat",
-     "kat-7": "kat-7",
-     "wsrt": "wsrt",
-     "ska1mid254": "meerkat",
-     "ska1mid197": "meerkat",
-     "lofar_nl": "lofar",
+_OBS = {
+    "meerkat": "meerkat",
+    "kat-7": "kat-7",
+    "wsrt": "wsrt",
+    "ska1mid254": "meerkat",
+    "ska1mid197": "meerkat",
+    "lofar_nl": "lofar",
 }
 
 # possible combinations for specifying VLA configurations
-VLA_CONFS = ["vla"]+["vla-%s"%s for s in "abcd"] + \
-    ["vla%s"%s for s in "abcd"] + \
-    ["vla_%s"%s for s in "abcd"] + \
-    ["jvla_%s"%s for s in "abcd"] + \
-    ["jvla-%s"%s for s in "abcd"] + \
-    ["jvla%s"%s for s in "abcd"]
+VLA_CONFS = ["vla"]+["vla-%s" % s for s in "abcd"] + \
+    ["vla%s" % s for s in "abcd"] + \
+    ["vla_%s" % s for s in "abcd"] + \
+    ["jvla_%s" % s for s in "abcd"] + \
+    ["jvla-%s" % s for s in "abcd"] + \
+    ["jvla%s" % s for s in "abcd"]
+
 
 def which_vla(name):
     name = name.lower()
     if name in ["vla", "jvla"]:
         return "jvla-d"
     elif name in VLA_CONFS:
-        return "jvla-%s"%(name[-1])
+        return "jvla-%s" % (name[-1])
     else:
         raise NameError("Telescope name could not recognised")
 
 
-def create_empty_ms(msname=None,label=None,tel=None,pos=None,pos_type='casa',
-          ra='0h0m0s',dec='-30d0m0s',synthesis=4,scan_length=[0],dtime=10,freq0=700e6,
-          dfreq=50e6,nchan=1,stokes='XX XY YX YY',setlimits=False,
-          elevation_limit=0,shadow_limit=0,outdir=None,nolog=False,
-          coords='itrf',lon_lat=None,noup=False,nbands=1,direction=[],date=None,
-          fromknown=False,feed="perfect X Y",scan_lag=0, auto_corr=False,
-          optimise_start=None):
-
+def create_empty_ms(msname=None, label=None, tel=None, pos=None, pos_type='casa',
+                    ra='0h0m0s', dec='-30d0m0s', synthesis=4, scan_length=[0], dtime=10, freq0=700e6,
+                    dfreq=50e6, nchan=1, stokes='XX XY YX YY', setlimits=False,
+                    elevation_limit=0, shadow_limit=0, outdir=None, nolog=False,
+                    coords='itrf', lon_lat=None, noup=False, nbands=1, direction=[], date=None,
+                    fromknown=False, feed="perfect X Y", scan_lag=0, auto_corr=False,
+                    optimise_start=None):
     """ 
 Uses the CASA simulate tool to create an empty measurement set. Requires
 either an antenna table (CASA table) or a list of ITRF or ENU positions. 
@@ -122,45 +132,38 @@ enebaling the --noup (-nu) option.
     def toList_freq(item, nounits=False):
         items = item.split(",")
         if nounits:
-            return map(int, items)
+            return list(map(int, items))
         else:
             try:
-                items = map(float, items)
-                return [ "{:.4g}MHz".format(val/1e6) for val in items ]
+                items = list(map(float, items))
+                return ["{:.4g}MHz".format(val/1e6) for val in items]
             except ValueError:
                 return items
-
 
     freq0 = toList_freq(freq0)
     dfreq = toList_freq(dfreq)
     nchan = toList_freq(nchan, nounits=True)
 
-    
-    if direction in [None,[],()]:
-        direction = ','.join(['J2000',ra,dec])
-    if isinstance(direction,str):
+    if direction in [None, [], ()]:
+        direction = ','.join(['J2000', ra, dec])
+    if isinstance(direction, str):
         direction = [direction]
 
     if msname is None:
-        msname = '%s_%dh%ss.MS'%(label or tel,synthesis,dtime)
-    if outdir not in [None,'.']:
-        msname = '%s/%s'%(outdir,msname)
+        msname = '%s_%dh%ss.MS' % (label or tel, synthesis, dtime)
+    if outdir not in [None, '.']:
+        msname = '%s/%s' % (outdir, msname)
         outdir = None
 
-    cdir = os.path.realpath('.')
-
-
-    message = "Having Trouble accessing the MS. Something went wrong while creating the MS, please check the logs.\n"\
+    message = u"Having Trouble accessing the MS. Something went wrong while creating the MS, please check the logs.\n"\
               "If you believe this is due to a bug in simms, please notify me via "\
               "https://github.com/SpheMakh/simms/issues/new"
 
     casa_script = tempfile.NamedTemporaryFile(suffix='.py')
-    casa_script.write("""
-# Auto Gen casa script. From simms.py
-import os
-os.chdir('%s')
-execfile('%s/casasm.py')
-"""%(cdir,simms_path) )
+    sname = "# Auto Gen casa script. From simms.py \n"\
+            "import os\n"\
+            "execfile('%s/casasm.py')" % (simms_path)
+    casa_script.write(sname.encode("utf-8"))
 
 
     fmt = 'msname="%(msname)s", label="%(label)s", tel="%(tel)s", pos="%(pos)s", '\
@@ -170,61 +173,30 @@ execfile('%s/casasm.py')
           'elevation_limit=%(elevation_limit)f, shadow_limit=%(shadow_limit)f, '\
           'coords="%(coords)s",lon_lat="%(lon_lat)s", noup=%(noup)s, nbands=%(nbands)d, '\
           'direction=%(direction)s, outdir="%(outdir)s",date="%(date)s",fromknown=%(fromknown)s, '\
-          'feed="%(feed)s",scan_lag=%(scan_lag).4g,auto_corr=%(auto_corr)s,optimise_start=%(optimise_start)s'%locals()
+          'feed="%(feed)s",scan_lag=%(scan_lag).4g,auto_corr=%(auto_corr)s,optimise_start=%(optimise_start)s' % locals()
 
-    info("Simms >>: %s"%fmt)
-    casa_script.write('makems(%s)\nexit'%fmt)
+    info("Simms >>: %s" % fmt)
+    casa_script.write(('\nmakems(%s)\nexit' % fmt).encode("utf-8"))
     casa_script.flush()
 
     tmpfile = casa_script.name
     t0 = time.time()
     logfile = 'log-simms.txt'
-    command = ['casa', '--nologger', '--log2term', 
-                  '%s'%('--nologfile' if nolog else '--logfile %s'%logfile),'-c',tmpfile]
-    tmpdir = tempfile.mkdtemp(dir='.')
+    print(nolog)
+    command = ['casa', '--nologger', '--log2term',
+               '%s' % ('--nologfile' if nolog else '--logfile %s' % logfile), '-c', tmpfile]
 
     if os.path.exists(msname):
-        os.system("rm -fr %s"%msname)
+        os.system("rm -fr %s" % msname)
 
-    t0 = time.time() 
-
-    process = subprocess.Popen("cd %s && "%tmpdir+" ".join(command),
-                  stderr=subprocess.PIPE if not isinstance(sys.stderr,file) else sys.stderr,
-                  stdout=subprocess.PIPE if not isinstance(sys.stdout,file) else sys.stdout,
-                  shell=True)
-
-    failed = False
-    if process.stdout or process.stderr:
-        out,err = process.communicate()
-        sys.stdout.write(out)
-        sys.stderr.write(err)
-        out = None
-    else:
-        process.wait()
-    if process.returncode:
-        print 'ERROR: simms.py returns errr code %d. %s'%(process.returncode, message)
-        failed = True
-
+    t0 = time.time()
+    _tmp = " ".join(command)
+    print(_tmp)
+    subprocess.check_call(shlex.split(_tmp))
+    print("Done")
     casa_script.close()
-    os.system('mv %s/%s . && rm -fr %s'%(tmpdir,logfile,tmpdir) )
-    for log in glob.glob("ipython-*.log"):
-        if os.path.getmtime(log)>t0:
-            os.system("rm -f %s"%log)
-    
-    if nolog:
-        for log in glob.glob("casapy*.log"):
-            if os.path.getmtime(log)>t0:
-                os.system("rm -f %s"%log)
 
-    # Log the simms command that invoked simms and add a time stamp
-    if not nolog:
-        with open(logfile,'a') as std:
-            ts = '%d/%d/%d  %d:%d:%d'%(time.localtime()[:6])
-            ran = " ".join(map(str,sys.argv))
-            std.write('\n %s ::: %s\n%s\n'%(ts," ".join(command),ran))
-            std.write("Parameters: %s\n"%fmt)
-
-    if os.path.exists(msname) and failed==False:
+    if os.path.exists(msname):
         info("simms succeeded")
     else:
         raise CasapyError(message)
@@ -232,121 +204,123 @@ execfile('%s/casasm.py')
 # Add this for backwards compatibilty.
 simms = create_empty_ms
 
+
 def main():
 
     for i, arg in enumerate(sys.argv):
-        if (arg[0] == '-') and arg[1].isdigit(): sys.argv[i] = ' ' + arg
+        if (arg[0] == '-') and arg[1].isdigit():
+            sys.argv[i] = ' ' + arg
 
     parser = ArgumentParser(description='Uses the CASA simulate tool to create '
-            'an empty measurement set. Requires either an antenna table (CASA table) '
-            'or a list of ITRF or ENU positions. '  
-            'A standard file should have the format:\n '
-            'pos1 pos2 pos3* dish_diameter station mount.\n'
-            'NOTE: In the case of ENU, the 3rd position (up) is not essential '
-            'and may not be specified; indicate that your file doesn\'t have this '
-            'dimension by enebaling the --noup (-nu) option.')
+                            'an empty measurement set. Requires either an antenna table (CASA table) '
+                            'or a list of ITRF or ENU positions. '
+                            'A standard file should have the format:\n '
+                            'pos1 pos2 pos3* dish_diameter station mount.\n'
+                            'NOTE: In the case of ENU, the 3rd position (up) is not essential '
+                            'and may not be specified; indicate that your file doesn\'t have this '
+                            'dimension by enebaling the --noup (-nu) option.')
     add = parser.add_argument
-    add("-v","--version", action='version',version='%s version %s'%(parser.prog,__version__))
-    add('-ukc','--use-known-config',dest='knownconfig',action='store_true',
-            help='Use known antenna configuration. For some reason sm.setknownconfig() '
-            'is not working. So this option does not work as yet.')
-    add('pos',help='Antenna positions', nargs='?')
-    add('-t','--type',dest='type',default='casa',choices=['casa','ascii'],
-            help='position list type : dafault is casa')
-    add('-cs','--coord-sys',dest='coords',default='itrf',choices=['itrf','enu','wgs84'],
-            help='Only relevent when --type=ascii. Coordinate system of antenna positions.' 
-                 ' :dafault is itrf')
-    add('-lle','--lon-lat-elv',dest='lon_lat',
-            help='Reference position of telescope. Comma '
-                 'seperated longitude,lattitude and elevation [deg,deg,m]. '
-                 'Elevation is not crucial, lon,lat should be enough. If not specified,' 
-                 ' we\'ll try to get this info from the CASA database '
-                 '(assuming that your observatory is known to CASA; --tel, -T): No default')
-    add('-nu','--noup',dest='noup',action='store_true',
-            help='Enable this to indicate that your ENU file does not have an '
-                 '\'up\' dimension: This is not the default' )
-    add('-T','--tel',dest='tel',
-            help='Telescope name : no default')
-    add('-n','--name',dest='name',
-            help='MS name. A name based on the observatoion will be generated otherwise.')
-    add('-od','--outdir',dest='outdir',default='.',
-            help='Directory in which to save the MS: default is working directory')
-    add('-l','--label',dest='label',
-            help='Label to add to the auto generated MS name (if --name is not given)')
-    add('-dir','--direction',dest='direction',action='append',default=[],
-            help='Pointing direction. Example J2000,0h0m0s,-30d0m0d. Option '
-                 '--direction may be specified multiple times for multiple pointings')
-    add('-ra','--ra',dest='ra',default='0h0m0s',
-            help = 'Right Assention in hms or val[unit] : default is 0h0m0s')
-    add('-dec','--dec',dest='dec',default='-30d0m0s',type=str,
-            help='Declination in dms or val[unit]: default is -30d0m0s')
-    add('-st','--synthesis-time',dest='synthesis',default=4,type=float,
-            help='Synthesis time in hours: default is 4.0')
-    add('-sl','--scan-length',action='append',dest='scan_length',type=str,
-            help='Synthesis time in hours: default is the sysntheis time')
-    add('-dt','--dtime',dest='dtime',default=10,type=float,
-            help='Integration time in seconds : default is 10s')
-    add('-ih','--init-ha',dest='init_ha',default=None,
-            help='Initial hour angle for observation. If not specified '
-                 'we use -[scan_length/2]:: DEPRECATED')
-    add('-nc','--nchan',dest='nchan',default='1',
-            help='Number of frequency channels. Specify as comma separated list ' 
-                 ' (for multiple subbands); see also --freq0, --dfreq: default is 1')
-    add('-f0','--freq0',dest='freq0',default='700MHz',
-            help='Start frequency. Specify as val[unit]. E.g 700MHz, not unit => Hz .'
-                 ' Use a comma seperated list for multiple start frequencies ' 
-                 '(for multiple subbands); see also --nchan, --dfreq: default is 700MHz')
-    add('-df','--dfreq',dest='dfreq',default='50MHz',
-            help='Channel width. Specify as val[unit]. E.g 700MHz, not unit => Hz '
-                 'Use a comma separated list of channel widths (for multiple subbands);'
-                 ' see also --nchan, --freq0 : default is 50MHz')
-    add('-nb','--nband',dest='nband',default=1,type=int,
-            help='Number of subbands : default is 1')
-    add('-pl','--pol',dest='pol',default='XX XY YX YY',
-            help='Polarization : default is XX XY YX YY')
-    add('-feed','--feed',dest='feed',default='perfect X Y',
-            help='Polarization : default is "perfect X Y" ')
-    add('-date','--date',dest='date',metavar="EPOCH,yyyy/mm/dd[/h:m:s]",
-            help='Date of observation. Example "UTC,2014/05/26" or "UTC,2014/05/26/12:12:12" : default is today')
-    add('-os','--optimise-start', action="store_true",
-            help='Modify observation start time to maximise source visibility.')
-    add('-slg','--scan-lag',default=0,type=float,
-            help="Lag time between scans. In hrs: default is 0:: DEPRECATED")
-    add('-stl','--set-limits',dest='set_limits',action='store_true',
-            help='Set telescope limits; elevation and shadow limts : not the default')
-    add('-el','--elevation-limit',dest='elevation_limit',type=float,default=0,
-            help='Dish elevation limit. Will only be taken into account if --set-limits (-stl) is enabled : no default')
-    add('-shl','--shadow-limit',dest='shadow_limit',type=float,default=0,
-            help='Shadow limit. Will only be taken into account if --set-limits (-stl) is enabled : no default')
-    add('-ac','--auto-correlations',dest='auto_corr',action='store_true',
-            help='Don\'t keep Log file : not the default')
-    add('-ng','--nolog',dest='nolog',action='store_true',
-            help='Don\'t keep Log file : not the default')
-    add('-jc','--json-config',dest='config',
-            help='Json config file : No default')
+    add("-v", "--version", action='version', version='%s version %s' %
+        (parser.prog, __version__))
+    add('-ukc', '--use-known-config', dest='knownconfig', action='store_true',
+        help='Use known antenna configuration. For some reason sm.setknownconfig() '
+        'is not working. So this option does not work as yet.')
+    add('pos', help='Antenna positions', nargs='?')
+    add('-t', '--type', dest='type', default='casa', choices=['casa', 'ascii'],
+        help='position list type : dafault is casa')
+    add('-cs', '--coord-sys', dest='coords', default='itrf', choices=['itrf', 'enu', 'wgs84'],
+        help='Only relevent when --type=ascii. Coordinate system of antenna positions.'
+        ' :dafault is itrf')
+    add('-lle', '--lon-lat-elv', dest='lon_lat',
+        help='Reference position of telescope. Comma '
+        'seperated longitude,lattitude and elevation [deg,deg,m]. '
+        'Elevation is not crucial, lon,lat should be enough. If not specified,'
+        ' we\'ll try to get this info from the CASA database '
+        '(assuming that your observatory is known to CASA; --tel, -T): No default')
+    add('-nu', '--noup', dest='noup', action='store_true',
+        help='Enable this to indicate that your ENU file does not have an '
+        '\'up\' dimension: This is not the default')
+    add('-T', '--tel', dest='tel',
+        help='Telescope name : no default')
+    add('-n', '--name', dest='name',
+        help='MS name. A name based on the observatoion will be generated otherwise.')
+    add('-od', '--outdir', dest='outdir', default='.',
+        help='Directory in which to save the MS: default is working directory')
+    add('-l', '--label', dest='label',
+        help='Label to add to the auto generated MS name (if --name is not given)')
+    add('-dir', '--direction', dest='direction', action='append', default=[],
+        help='Pointing direction. Example J2000,0h0m0s,-30d0m0d. Option '
+        '--direction may be specified multiple times for multiple pointings')
+    add('-ra', '--ra', dest='ra', default='0h0m0s',
+        help='Right Assention in hms or val[unit] : default is 0h0m0s')
+    add('-dec', '--dec', dest='dec', default='-30d0m0s', type=str,
+        help='Declination in dms or val[unit]: default is -30d0m0s')
+    add('-st', '--synthesis-time', dest='synthesis', default=4, type=float,
+        help='Synthesis time in hours: default is 4.0')
+    add('-sl', '--scan-length', action='append', dest='scan_length', type=str,
+        help='Synthesis time in hours: default is the sysntheis time')
+    add('-dt', '--dtime', dest='dtime', default=10, type=float,
+        help='Integration time in seconds : default is 10s')
+    add('-ih', '--init-ha', dest='init_ha', default=None,
+        help='Initial hour angle for observation. If not specified '
+        'we use -[scan_length/2]:: DEPRECATED')
+    add('-nc', '--nchan', dest='nchan', default='1',
+        help='Number of frequency channels. Specify as comma separated list '
+        ' (for multiple subbands); see also --freq0, --dfreq: default is 1')
+    add('-f0', '--freq0', dest='freq0', default='700MHz',
+        help='Start frequency. Specify as val[unit]. E.g 700MHz, not unit => Hz .'
+        ' Use a comma seperated list for multiple start frequencies '
+        '(for multiple subbands); see also --nchan, --dfreq: default is 700MHz')
+    add('-df', '--dfreq', dest='dfreq', default='50MHz',
+        help='Channel width. Specify as val[unit]. E.g 700MHz, not unit => Hz '
+        'Use a comma separated list of channel widths (for multiple subbands);'
+        ' see also --nchan, --freq0 : default is 50MHz')
+    add('-nb', '--nband', dest='nband', default=1, type=int,
+        help='Number of subbands : default is 1')
+    add('-pl', '--pol', dest='pol', nargs="+", default='XX XY YX YY'.split(),
+        help='Polarization : default is XX XY YX YY')
+    add('-feed', '--feed', dest='feed', nargs="+", default='perfect X Y'.split(),
+        help='Polarization : default is "perfect X Y" ')
+    add('-date', '--date', dest='date', metavar="EPOCH,yyyy/mm/dd[/h:m:s]",
+        help='Date of observation. Example "UTC,2014/05/26" or "UTC,2014/05/26/12:12:12" : default is today')
+    add('-os', '--optimise-start', action="store_true",
+        help='Modify observation start time to maximise source visibility.')
+    add('-slg', '--scan-lag', default=0, type=float,
+        help="Lag time between scans. In hrs: default is 0:: DEPRECATED")
+    add('-stl', '--set-limits', dest='set_limits', action='store_true',
+        help='Set telescope limits; elevation and shadow limts : not the default')
+    add('-el', '--elevation-limit', dest='elevation_limit', type=float, default=0,
+        help='Dish elevation limit. Will only be taken into account if --set-limits (-stl) is enabled : no default')
+    add('-shl', '--shadow-limit', dest='shadow_limit', type=float, default=0,
+        help='Shadow limit. Will only be taken into account if --set-limits (-stl) is enabled : no default')
+    add('-ac', '--auto-correlations', dest='auto_corr', action='store_true',
+        help='Don\'t keep Log file : not the default')
+    add('-ng', '--nolog', dest='nolog', action='store_true',
+        help='Don\'t keep Log file : not the default')
+    add('-jc', '--json-config', dest='config',
+        help='Json config file : No default')
 
     try:
         args = parser.parse_args()
-    except ParserError: 
+    except ParserError:
         args = parser.parse_args(args=sys.argv)
-        print args
 
     if args.config:
         with open(args.config) as conf:
             jdict = json.load(conf)
 
-        for key, val in jdict.iteritems():
-            if isinstance(val, unicode):
+        for key, val in jdict.items():
+            if isinstance(val, str):
                 jdict[key] = str(val)
 
         tel = jdict["tel"]
-        if tel in _ANTENNAS.keys()+VLA_CONFS and not jdict.get("pos", False):
+        if tel in list(_ANTENNAS.keys())+VLA_CONFS and not jdict.get("pos", False):
             if tel[:-3] in ["vla", "jvl"]:
                 pos = which_vla(tel)
                 jdict["tel"] = "vla"
             else:
                 pos = jdict["tel"]
-            jdict["pos"] = "%s/observatories/%s"%(simms_path, _ANTENNAS[pos])
+            jdict["pos"] = "%s/observatories/%s" % (simms_path, _ANTENNAS[pos])
             jdict["pos_type"] = "ascii"
             jdict["coords"] = "itrf"
 
@@ -354,33 +328,33 @@ def main():
 
     else:
         if (not args.tel) and (not args.lon_lat):
-            parser.error('Either the telescope name (--tel/-T) or Telescope coordinate (-lle/--lon-lat )is required')
+            parser.error(
+                'Either the telescope name (--tel/-T) or Telescope coordinate (-lle/--lon-lat )is required')
 
-        telescope = args.tel.lower() 
-        if telescope in _ANTENNAS.keys()+VLA_CONFS and args.pos==None:
+        telescope = args.tel.lower()
+        if telescope in list(_ANTENNAS.keys())+VLA_CONFS and args.pos == None:
             if telescope[:3] in ["vla", "jvl"] and args.pos in [None, False, ""]:
                 pos = which_vla(telescope)
                 telescope = "vla"
             else:
                 pos = _OBS[args.tel.lower()]
                 telescope = _OBS[pos]
-            antennas = "%s/observatories/%s"%(simms_path, _ANTENNAS[pos])
+            antennas = "%s/observatories/%s" % (simms_path, _ANTENNAS[pos])
 
             _type = "ascii"
             cs = "itrf"
         else:
-             antennas = args.pos
-             telescope = args.tel
-             _type = args.type
-             cs = args.coords
+            antennas = args.pos
+            telescope = args.tel
+            _type = args.type
+            cs = args.coords
 
-
-        simms(msname=args.name,label=args.label,tel=telescope,pos=antennas,feed=args.feed,
-              pos_type=_type,ra=args.ra,dec=args.dec,synthesis=args.synthesis,scan_length=args.scan_length,
-              dtime=args.dtime,freq0=args.freq0,dfreq=args.dfreq,nchan=args.nchan,
-              stokes=args.pol,setlimits=args.set_limits,
-              elevation_limit=args.elevation_limit,shadow_limit=args.shadow_limit,
-              outdir=args.outdir,coords=cs,lon_lat=args.lon_lat,noup=args.noup,
-              direction=args.direction,nbands=args.nband,date=args.date,
-              fromknown=args.knownconfig,scan_lag=args.scan_lag,auto_corr=args.auto_corr,
-              optimise_start=args.optimise_start)
+        simms(msname=args.name, label=args.label, tel=telescope, pos=antennas, feed=" ".join(args.feed),
+              pos_type=_type, ra=args.ra, dec=args.dec, synthesis=args.synthesis, scan_length=args.scan_length,
+              dtime=args.dtime, freq0=args.freq0, dfreq=args.dfreq, nchan=args.nchan,
+              stokes=" ".join(args.pol), setlimits=args.set_limits,
+              elevation_limit=args.elevation_limit, shadow_limit=args.shadow_limit,
+              outdir=args.outdir, coords=cs, lon_lat=args.lon_lat, noup=args.noup,
+              direction=args.direction, nbands=args.nband, date=args.date,
+              fromknown=args.knownconfig, scan_lag=args.scan_lag, auto_corr=args.auto_corr,
+              optimise_start=args.optimise_start, nolog=args.nolog)

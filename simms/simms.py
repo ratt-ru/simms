@@ -159,10 +159,11 @@ enebaling the --noup (-nu) option.
               "If you believe this is due to a bug in simms, please notify me via "\
               "https://github.com/SpheMakh/simms/issues/new"
 
-    casa_script = tempfile.NamedTemporaryFile(suffix='.py')
+    casa_script = tempfile.NamedTemporaryFile(suffix='.py', delete=False)
     sname = "# Auto Gen casa script. From simms.py \n"\
-            "import os\n"\
-            "execfile('%s/casasm.py')" % (simms_path)
+            "import os, sys\n"\
+            "sys.path.append('%s')\n"\
+            "import casasm" % (simms_path)
     casa_script.write(sname.encode("utf-8"))
 
 
@@ -176,13 +177,12 @@ enebaling the --noup (-nu) option.
           'feed="%(feed)s",scan_lag=%(scan_lag).4g,auto_corr=%(auto_corr)s,optimise_start=%(optimise_start)s' % locals()
 
     info("Simms >>: %s" % fmt)
-    casa_script.write(('\nmakems(%s)\nexit' % fmt).encode("utf-8"))
+    casa_script.write(('\ncasasm.makems(%s)\nexit' % fmt).encode("utf-8"))
     casa_script.flush()
 
     tmpfile = casa_script.name
     t0 = time.time()
     logfile = 'log-simms.txt'
-    print(nolog)
     command = ['casa', '--nologger', '--log2term',
                '%s' % ('--nologfile' if nolog else '--logfile %s' % logfile), '-c', tmpfile]
 

@@ -1,5 +1,4 @@
 # create a sumulated measurement from given a list of itrf antenna position or an antenna table (Casa table)
-# Sphesihle Makhathini sphemakh@gmail.com
 import os
 import sys
 import numpy as np
@@ -32,7 +31,7 @@ def wgs84_2xyz(pos_wgs84):
 def enu2xyz (refpos_wgs84,enu):
     """ converts xyz0 + ENU (Nx3 array) into xyz """
     refpos = me.measure(refpos_wgs84,'itrf')
-    lon,lat,rad = [ refpos[x]['value'] for x in 'm0','m1','m2' ]
+    lon,lat,rad = [ refpos[x]['value'] for x in ('m0','m1','m2') ]
     xyz0 = rad*np.array([math.cos(lat)*math.cos(lon),math.cos(lat)*math.sin(lon),math.sin(lat)])
     # 3x3 transform matrix. Each row is a normal vector, i.e. the rows are (dE,dN,dU)
     xform = np.array([

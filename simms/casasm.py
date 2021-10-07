@@ -179,17 +179,16 @@ def makems(msname=None,label=None,tel='MeerKAT',pos=None,pos_type='CASA',
 
     synthesis *= 3600
 
+    # fit as many complete scans into field synthesis time as possible
     if nscans == 1 and scan_length[0] < synthesis:
-        nscans = np.int( np.ceil( synthesis/scan_length[0] ) )
+        nscans = np.int( np.floor( synthesis/scan_length[0] ) )
         scan_length = scan_length*(nscans)
-    
+
     if ndir>=1:
-        # if scan legth is not set, set it to equal the synthesis time
+        # if scan legth is not set, set it to equal the synthesis time per field
         if nscans == 0:
-            scan_length = [synthesis*1.0/ndir]*ndir
-            nscans = ndir
-        while ndir > nscans:
-          scan_length.append(scan_length[-1])
+            scan_length = [synthesis*1.0]*ndir
+            nscans = 1 # one scan per field for the entire st
 
     # Set spectral window information
     if nbands > 1 and len(freq0) >1:
@@ -207,7 +206,18 @@ def makems(msname=None,label=None,tel='MeerKAT',pos=None,pos_type='CASA',
     while len(nchan) < nbands:
         nchan.append(nchan[-1])
     while len(dfreq) < nbands:
-            dfreq.append(dfreq[-1])
+        dfreq.append(dfreq[-1])
+    print("Creating Measurement Set with the following properties:")
+    print("\t {} SPWs each with {} channels at of {} resolution".format(
+        nbands,
+        ",".join(map(str, nchan)),
+        ",".join(map(str, dfreq))
+    ))
+    print("\t {} tracking fields each with scans of duration {}s, total {}hr per field".format(
+        len(direction),
+        ",".join(map(str, map(int, map(np.ceil, scan_length)))),
+        "{0:.2f}".format(np.sum(scan_length)/3600.0)
+    ))
 
     for i,(freq,df,nc) in enumerate( zip(freq0,dfreq,nchan) ):
         bname = '{0:02d}'.format(i)
@@ -220,17 +230,27 @@ def makems(msname=None,label=None,tel='MeerKAT',pos=None,pos_type='CASA',
 
         # Set field information
         start_time = 0.0 - sum(scan_length)/2.0
-        for fid,field in enumerate(direction):
-            field = field.split(",")
-            fname = sourcename="{0:02d}".format(fid)
-            sm.setfield(sourcename=fname,
-                        sourcedirection=me.direction(*field))
+        num_scans_dumped = dict(zip(direction, [0] * len(direction)))
+        next_direction = 0
+        while any([num_scans_dumped[d] < len(scan_length) for d in direction]):
+            fid = next_direction
+            if num_scans_dumped[direction[fid]] < len(scan_length):
+                field = direction[next_direction].split(",")
+                fname = sourcename="{0:02d}".format(fid)
+                sm.setfield(sourcename=fname,
+                            sourcedirection=me.direction(*field))
 
-            for sl in scan_length:
+                # advance by another scan
+                sl = scan_length[num_scans_dumped[direction[fid]]]
                 stop_time = start_time + sl
                 sm.observe('{:02d}'.format(fid), '{:02d}'.format(i),
-                        starttime=start_time,stoptime=stop_time)
+                           starttime=start_time,stoptime=stop_time)
                 start_time += sl
+
+                num_scans_dumped[direction[fid]] += 1
+
+            # advance to next field i.o.t interleave fields
+            next_direction = (next_direction + 1) % len(direction)
 
     me.doframe(reftime)
     me.doframe(obs_pos)

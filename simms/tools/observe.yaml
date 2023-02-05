@@ -1,0 +1,32 @@
+inputs:
+  telescope:
+    info: Telescope to simulate
+    dtype: str
+    required: true
+  synthesis:
+    info: Observation length in hours
+    dtype: float
+    default: 0.5
+  dtime:
+    info: Integration time in seconds
+    dtype: float
+    default: 4
+  freq0:
+    info: Start frequency
+    dtype: Union[float,str]
+    default: 1.42GHz
+  dfreq:
+    info: Frequency channel width
+    dtype: Union[float,str]
+    default: 1MHz
+  direction:
+    info: Direction of field to observe
+    dtype: List[str]
+    default:
+      - J2000
+      - 0deg
+      - -30deg
+  start-time:
+    info: Observation start time
+    dtype: List[str]
+

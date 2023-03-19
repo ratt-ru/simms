@@ -10,7 +10,7 @@ import os
 import time
 
 import numpy as np
-from casatools import componentlist, coordsys, image, measures, quanta, simulator, table
+from casatools import componentlist, image, measures, simulator, table
 
 # Instantiate all the required tools
 sm = simulator()

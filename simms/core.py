@@ -14,8 +14,8 @@ import io
 import shlex
 import pkg_resources
 
-from . import casasm
-from simms import __version__
+from simms import casasm
+__version__ = pkg_resources.get_distribution('simms').version
 
 
 # I want to replace error() in argparse.ArgumentParser class

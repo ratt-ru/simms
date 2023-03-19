@@ -1,13 +1,12 @@
 #!/usr/bin/env python
 
-
 from setuptools import setup, find_packages
 from simms import __version__
 import os
 
 
 scripts = [
-    "simms/bin/simms"
+    "simms/simms",
 ]
 
 
@@ -18,6 +17,12 @@ package_data = {'simms': [
     'config.json',
 ]}
 
+required = [
+    "numpy",
+    "casatasks",
+    "casatools",
+]
+
 
 setup(name="simms",
       version=__version__,
@@ -27,7 +32,7 @@ setup(name="simms",
       url="https://github.com/radio-astro/simms",
       packages=find_packages(),
       package_data=package_data,
-      install_requires=[],
+      install_requires=required,
       scripts=scripts,
       license="GPL2",
       classifiers=[],

@@ -1,6 +1,6 @@
+import os
 import subprocess
 import sys
-import os
 
 message = """
 Cannot find casapy in your system:
@@ -17,6 +17,6 @@ Install it, then re-run the test.py
 subprocess.check_call(["simms", "--help"])
 
 # Finally see if we can run simms
-subprocess.check_call(['simms', '-T', 'kat-7', '-st', '8', '-dt', '10'])
+subprocess.check_call(["simms", "-T", "kat-7", "-st", "8", "-dt", "10"])
 
 print("Done! All is good")

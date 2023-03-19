@@ -17,3 +17,6 @@ Changes since 0.6.0
 
 # 1.0.8
 - Add option to optimise observation start time
+
+# 2.0.0
+- Refactored to support CASA 6 (and modular structure)

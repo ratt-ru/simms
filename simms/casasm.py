@@ -1,24 +1,18 @@
 # create a sumulated measurement from given a list of itrf antenna position or an antenna table (Casa table)
 import os
-import sys
 import numpy as np
 import math
 import glob
 import time
 
-from casatools import simulator, image, table, coordsys, measures, componentlist, quanta, ctsys
-from casatasks import tclean, ft, imhead, listobs, exportfits, flagdata, bandpass, applycal
-from casatasks.private import simutil
+from casatools import simulator, image, table, coordsys, measures, componentlist, quanta
 
 # Instantiate all the required tools
 sm = simulator()
 ia = image()
 tb = table()
-cs = coordsys()
 me = measures()
-qa = quanta()
 cl = componentlist()
-mysu = simutil.simutil()
 
 
 DEG = 180/math.pi
@@ -82,7 +76,7 @@ def makems(msname=None,label=None,tel='MeerKAT',pos=None,pos_type='CASA',
            auto_corr=False,
            scan_lag=0): # Deprecated
     """ Creates an empty measurement set using CASA simulate (sm) tool. """
-
+    t0 = time.time()
 
     if (lon_lat is None) and tel and tel.upper() not in [ item.upper() for item in me.obslist() ]:
         raise ValueError("Could not Find your telescope [%s] in the CASA Database. "\
@@ -213,7 +207,7 @@ def makems(msname=None,label=None,tel='MeerKAT',pos=None,pos_type='CASA',
         _dfreq = me.frequency("rest", dfreq)["m0"]["value"]
         bw = _dfreq*nchan + _freq0
         for band in range(1, nbands):
-            __freq0 = "{:.4f}MHz".format(_freq + band*bw)
+            __freq0 = "{:.4f}MHz".format(_freq0 + band*bw)
             freq0.append(__freq0)
     else:
         nbands = len(freq0)
@@ -277,13 +271,13 @@ def makems(msname=None,label=None,tel='MeerKAT',pos=None,pos_type='CASA',
                             'Double check you settings. If you feel this '
                             'is due a to bug, raise an issue on https://github.com/SpheMakh/simms')
 
-    if validate(msname):
+    if validate(msname, t0):
         return msname
     else:
         os.system("rm -fr %s"%msname)
 
 
-def validate(msname):
+def validate(msname, t0):
 
     # Run a few tests on the MS, see if its valid.
     print("Validating %s ..."%msname)

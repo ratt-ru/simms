@@ -1,4 +1,17 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
 # Sphesihle Makhathini <sphemakh@gmail.com>
+"""Uses the CASA simulate tool to create
+an empty measurement set. Requires either an antenna table (CASA table)
+or a list of ITRF or ENU positions.
+
+A standard file should have the format:
+    pos1 pos2 pos3* dish_diameter station mount.
+
+NOTE: In the case of ENU, the 3rd position (up) is not essential
+and may not be specified; indicate that your file doesn't have this
+dimension by enebaling the --noup (-nu) option
+"""
 
 import argparse
 import json
@@ -205,14 +218,7 @@ def create_empty_ms(
 
 def main():
     parser = ArgumentParser(
-        description="Uses the CASA simulate tool to create "
-        "an empty measurement set. Requires either an antenna table (CASA table) "
-        "or a list of ITRF or ENU positions. "
-        "A standard file should have the format:\n "
-        "pos1 pos2 pos3* dish_diameter station mount.\n"
-        "NOTE: In the case of ENU, the 3rd position (up) is not essential "
-        "and may not be specified; indicate that your file doesn't have this "
-        "dimension by enebaling the --noup (-nu) option."
+        description=__doc__,
     )
     add = parser.add_argument
     add(

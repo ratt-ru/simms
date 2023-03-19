@@ -1,4 +1,9 @@
-# create a sumulated measurement from given a list of itrf antenna position or an antenna table (Casa table)
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+create a sumulated measurement from given a list of itrf antenna position
+or an antenna table (Casa table)
+"""
 import glob
 import math
 import os

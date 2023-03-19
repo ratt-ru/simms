@@ -1,17 +1,9 @@
 # Sphesihle Makhathini <sphemakh@gmail.com>
 
 import os
-import sys
-import subprocess
 import argparse
-import time
-import tempfile
-import glob
-import math
 import json
 import logging
-import io
-import shlex
 import pkg_resources
 
 from simms import casasm

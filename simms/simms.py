@@ -12,8 +12,10 @@ import json
 import logging
 import io
 import shlex
+import pkg_resources
 
 from . import casasm
+from simms import __version__
 
 
 # I want to replace error() in argparse.ArgumentParser class
@@ -285,16 +287,14 @@ def main():
                 jdict["tel"] = "vla"
             else:
                 pos = jdict["tel"]
-            jdict["pos"] = "%s/observatories/%s" % (simms_path, _ANTENNAS[pos])
+            # jdict["pos"] = "%s/observatories/%s" % (simms_path, _ANTENNAS[pos])
+            jdict["pos"] = pkg_resources.resource_filename("simms.observatories", _ANTENNAS[pos])
             jdict["pos_type"] = "ascii"
             jdict["coords"] = "itrf"
 
-        create_empty_ms(**jdict)
-
     else:
         if (not args.tel) and (not args.lon_lat):
-            parser.error(
-                'Either the telescope name (--tel/-T) or Telescope coordinate (-lle/--lon-lat )is required')
+            raise parser.error('Either the telescope name (--tel/-T) or Telescope coordinate (-lle/--lon-lat )is required')
 
         telescope = args.tel.lower()
         if telescope in list(_ANTENNAS.keys())+VLA_CONFS and args.pos == None:
@@ -304,7 +304,7 @@ def main():
             else:
                 pos = _OBS[args.tel.lower()]
                 telescope = _OBS[pos]
-            antennas = "%s/observatories/%s" % (simms_path, _ANTENNAS[pos])
+            antennas = pkg_resources.resource_filename("simms.observatories", _ANTENNAS[pos])
 
             _type = "ascii"
             cs = "itrf"
@@ -313,8 +313,7 @@ def main():
             telescope = args.tel
             _type = args.type
             cs = args.coords
-
-        create_empty_ms(
+        jdict = dict(
             msname=args.name,
             label=args.label,
             tel=telescope,
@@ -340,9 +339,16 @@ def main():
             direction=args.direction,
             nbands=args.nband,
             date=args.date,
-            fromknown=args.knownconfig,
+            optimise_start=args.optimise_start,
             scan_lag=args.scan_lag,
             auto_corr=args.auto_corr,
-            optimise_start=args.optimise_start,
-            nolog=args.nolog
+            nolog=args.nolog,
         )
+
+
+        create_empty_ms(
+            **jdict
+        )
+
+if __name__ == "__main__":
+    main()

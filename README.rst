@@ -8,7 +8,7 @@ Creates empty measurement sets using the the CASA simulate tool.
 Requires
 ========
 
- * NRAO CASA 6 (modular) <https://casadocs.readthedocs.io/en/stable/index.html>
+ * `NRAO CASA 6 (modular) <https://casadocs.readthedocs.io/en/stable/index.html>`_
  * numpy
 
 

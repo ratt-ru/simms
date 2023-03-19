@@ -148,15 +148,10 @@ def create_empty_ms(msname=None, label=None, tel=None, pos=None, pos_type='casa'
         msname = '%s/%s' % (outdir, msname)
         outdir = None
 
-    message = """Having Trouble accessing the MS. Something went wrong while creating the MS, please check the logs.
-              If you believe this is due to a bug in simms, please notify me via
-              https://github.com/SpheMakh/simms/issues/new
-              """
-
     casasm.makems(
         msname=msname,
         label=label,
-        tel=tel
+        tel=tel,
         pos=pos,
         pos_type=pos_type,
         synthesis=synthesis,
@@ -185,16 +180,8 @@ def create_empty_ms(msname=None, label=None, tel=None, pos=None, pos_type='casa'
     if os.path.exists(msname):
         os.system("rm -fr %s" % msname)
 
-# Add this for backwards compatibilty.
-simms = create_empty_ms
-
 
 def main():
-
-    for i, arg in enumerate(sys.argv):
-        if (arg[0] == '-') and arg[1].isdigit():
-            sys.argv[i] = ' ' + arg
-
     parser = ArgumentParser(description='Uses the CASA simulate tool to create '
                             'an empty measurement set. Requires either an antenna table (CASA table) '
                             'or a list of ITRF or ENU positions. '
@@ -284,10 +271,7 @@ def main():
     add('-jc', '--json-config', dest='config',
         help='Json config file : No default')
 
-    try:
-        args = parser.parse_args()
-    except ParserError:
-        args = parser.parse_args(args=sys.argv)
+    args = parser.parse_args()
 
     if args.config:
         with open(args.config) as conf:
@@ -308,7 +292,7 @@ def main():
             jdict["pos_type"] = "ascii"
             jdict["coords"] = "itrf"
 
-        simms(**jdict)
+        create_empty_ms(**jdict)
 
     else:
         if (not args.tel) and (not args.lon_lat):
@@ -333,7 +317,7 @@ def main():
             _type = args.type
             cs = args.coords
 
-        simms(msname=args.name, label=args.label, tel=telescope, pos=antennas, feed=" ".join(args.feed),
+        create_empty_ms(msname=args.name, label=args.label, tel=telescope, pos=antennas, feed=" ".join(args.feed),
               pos_type=_type, ra=args.ra, dec=args.dec, synthesis=args.synthesis, scan_length=args.scan_length,
               dtime=args.dtime, freq0=args.freq0, dfreq=args.dfreq, nchan=args.nchan,
               stokes=" ".join(args.pol), setlimits=args.set_limits,

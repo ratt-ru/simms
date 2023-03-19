@@ -13,6 +13,8 @@ import logging
 import io
 import shlex
 
+from . import casasm
+
 
 # I want to replace error() in argparse.ArgumentParser class
 # I do this so I can catch the exception raised when too few arguments
@@ -25,16 +27,7 @@ class ArgumentParser(argparse.ArgumentParser):
     def error(self, message):
         raise ParserError(message or 'Not enough Arguments')
 
-
-# set simms directory
-simms_path = os.path.realpath(__file__)
-simms_path = os.path.dirname(simms_path)
-exec(compile(open("%s/__init__.py" % simms_path, "rb").read(),
-             "%s/__init__.py" % simms_path, 'exec'))
-
 # Communication functions
-
-
 def info(string):
     logging.info(string)
 
@@ -105,28 +98,28 @@ def create_empty_ms(msname=None, label=None, tel=None, pos=None, pos_type='casa'
                     coords='itrf', lon_lat=None, noup=False, nbands=1, direction=[], date=None,
                     fromknown=False, feed="perfect X Y", scan_lag=0, auto_corr=False,
                     optimise_start=None):
-    """ 
-Uses the CASA simulate tool to create an empty measurement set. Requires
-either an antenna table (CASA table) or a list of ITRF or ENU positions. 
+    """
+    Uses the CASA simulate tool to create an empty measurement set. Requires
+    either an antenna table (CASA table) or a list of ITRF or ENU positions.
 
-msname: MS name
-tel: Telescope name (This name must be in the CASA Database (check in me.obslist() in casa)
-     If its not there, then you will need to specify the telescope coordinates via "lon_lat"
-pos: Antenna positions. This can either a CASA table or an ASCII file. 
-     (see simms --help for more on using an ascii file)
-pos_type: Antenna position type. Choices are (casa, ascii)
-coords: This is only applicable if you are using an ASCII file. Choices are (itrf, enu)
-synthesis: Synthesis time in hours
-dtime: Integration time in seconds
-freq0: Start frequency 
-dfreq: Channel width
-nbands: Number of frequency bands
-**kw: extra keyword arguments.
+    msname: MS name
+    tel: Telescope name (This name must be in the CASA Database (check in me.obslist() in casa)
+        If its not there, then you will need to specify the telescope coordinates via "lon_lat"
+    pos: Antenna positions. This can either a CASA table or an ASCII file.
+        (see simms --help for more on using an ascii file)
+    pos_type: Antenna position type. Choices are (casa, ascii)
+    coords: This is only applicable if you are using an ASCII file. Choices are (itrf, enu)
+    synthesis: Synthesis time in hours
+    dtime: Integration time in seconds
+    freq0: Start frequency
+    dfreq: Channel width
+    nbands: Number of frequency bands
+    **kw: extra keyword arguments.
 
-A standard file should have the format: pos1 pos2 pos3* dish_diameter station
-mount. NOTE: In the case of ENU, the 3rd position (up) is not essential and
-may not be specified; indicate that your file doesn't have this dimension by
-enebaling the --noup (-nu) option.
+    A standard file should have the format: pos1 pos2 pos3* dish_diameter station
+    mount. NOTE: In the case of ENU, the 3rd position (up) is not essential and
+    may not be specified; indicate that your file doesn't have this dimension by
+    enebaling the --noup (-nu) option.
     """
 
     def toList_freq(item, nounits=False):
@@ -155,51 +148,42 @@ enebaling the --noup (-nu) option.
         msname = '%s/%s' % (outdir, msname)
         outdir = None
 
-    message = u"Having Trouble accessing the MS. Something went wrong while creating the MS, please check the logs.\n"\
-              "If you believe this is due to a bug in simms, please notify me via "\
-              "https://github.com/SpheMakh/simms/issues/new"
+    message = """Having Trouble accessing the MS. Something went wrong while creating the MS, please check the logs.
+              If you believe this is due to a bug in simms, please notify me via
+              https://github.com/SpheMakh/simms/issues/new
+              """
 
-    casa_script = tempfile.NamedTemporaryFile(suffix='.py', delete=False)
-    sname = "# Auto Gen casa script. From simms.py \n"\
-            "import os, sys\n"\
-            "sys.path.append('%s')\n"\
-            "import casasm" % (simms_path)
-    casa_script.write(sname.encode("utf-8"))
-
-
-    fmt = 'msname="%(msname)s", label="%(label)s", tel="%(tel)s", pos="%(pos)s", '\
-          'pos_type="%(pos_type)s", synthesis=%(synthesis).4g, '\
-          'scan_length=%(scan_length)s, dtime="%(dtime)s", freq0=%(freq0)s, dfreq=%(dfreq)s, '\
-          'nchan=%(nchan)s, stokes="%(stokes)s", setlimits=%(setlimits)s, '\
-          'elevation_limit=%(elevation_limit)f, shadow_limit=%(shadow_limit)f, '\
-          'coords="%(coords)s",lon_lat="%(lon_lat)s", noup=%(noup)s, nbands=%(nbands)d, '\
-          'direction=%(direction)s, outdir="%(outdir)s",date="%(date)s",fromknown=%(fromknown)s, '\
-          'feed="%(feed)s",scan_lag=%(scan_lag).4g,auto_corr=%(auto_corr)s,optimise_start=%(optimise_start)s' % locals()
-
-    info("Simms >>: %s" % fmt)
-    casa_script.write(('\ncasasm.makems(%s)\nexit' % fmt).encode("utf-8"))
-    casa_script.flush()
-
-    tmpfile = casa_script.name
-    t0 = time.time()
-    logfile = 'log-simms.txt'
-    command = ['casa', '--nologger', '--log2term',
-               '%s' % ('--nologfile' if nolog else '--logfile %s' % logfile), '-c', tmpfile]
-
+    casasm.makems(
+        msname=msname,
+        label=label,
+        tel=tel
+        pos=pos,
+        pos_type=pos_type,
+        synthesis=synthesis,
+        scan_length=scan_length,
+        dtime=dtime,
+        freq0=freq0,
+        dfreq=dfreq,
+        nchan=nchan,
+        stokes=stokes,
+        setlimits=setlimits,
+        elevation_limit=elevation_limit,
+        shadow_limit=shadow_limit,
+        coords=coords,
+        lon_lat=lon_lat,
+        noup=noup,
+        nbands=nbands,
+        direction=direction,
+        outdir=outdir,
+        date=date,
+        fromknown=fromknown,
+        feed=feed,
+        scan_lag=scan_lag,
+        auto_corr=auto_corr,
+        optimise_start=optimise_start,
+    )
     if os.path.exists(msname):
         os.system("rm -fr %s" % msname)
-
-    t0 = time.time()
-    _tmp = " ".join(command)
-    print(_tmp)
-    subprocess.check_call(shlex.split(_tmp))
-    print("Done")
-    casa_script.close()
-
-    if os.path.exists(msname):
-        info("simms succeeded")
-    else:
-        raise CasapyError(message)
 
 # Add this for backwards compatibilty.
 simms = create_empty_ms

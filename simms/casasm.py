@@ -4,6 +4,22 @@ import sys
 import numpy as np
 import math
 import glob
+import time
+
+from casatools import simulator, image, table, coordsys, measures, componentlist, quanta, ctsys
+from casatasks import tclean, ft, imhead, listobs, exportfits, flagdata, bandpass, applycal
+from casatasks.private import simutil
+
+# Instantiate all the required tools
+sm = simulator()
+ia = image()
+tb = table()
+cs = coordsys()
+me = measures()
+qa = quanta()
+cl = componentlist()
+mysu = simutil.simutil()
+
 
 DEG = 180/math.pi
 
@@ -19,14 +35,14 @@ def get_int_data(tab):
 
 def wgs84_2xyz(pos_wgs84):
     """ convert wgs84 to itrf """
-    
+
     pos_itrf = np.zeros(pos_wgs84.shape)
     for i,(x,y,z) in enumerate(pos_wgs84):
         p = me.position("wgs84", "%fdeg"%x, "%fdeg"%y, "%fm"%z)
         pos_itrf[i] = me.addxvalue( me.measure(p, "itrf"))["value"]
 
     return pos_itrf
-    
+
 
 def enu2xyz (refpos_wgs84,enu):
     """ converts xyz0 + ENU (Nx3 array) into xyz """
@@ -39,7 +55,7 @@ def enu2xyz (refpos_wgs84,enu):
         [-math.cos(lon)*math.sin(lat),-math.sin(lon)*math.sin(lat),math.cos(lat)],
         [math.cos(lat)*math.cos(lon),math.cos(lat)*math.sin(lon),math.sin(lat)]
     ])
-    
+
     xyz = xyz0[np.newaxis,:] + enu.dot(xform)
     return xyz
 
@@ -58,7 +74,7 @@ def makems(msname=None,label=None,tel='MeerKAT',pos=None,pos_type='CASA',
            elevation_limit=None,
            shadow_limit=None,
            outdir=None,
-           coords='itrf',           
+           coords='itrf',
            lon_lat=None,
            optimise_start=False,
            date=None,
@@ -81,8 +97,8 @@ def makems(msname=None,label=None,tel='MeerKAT',pos=None,pos_type='CASA',
 
     if not isinstance(dtime,str):
         dtime = '%ds'%dtime
-    
-    if msname.lower().strip()=='none': 
+
+    if msname.lower().strip()=='none':
         msname = None
     if msname is None:
         msname = '%s_%dh%s.MS'%(label or tel,synthesis,dtime)
@@ -117,7 +133,7 @@ def makems(msname=None,label=None,tel='MeerKAT',pos=None,pos_type='CASA',
 
         elif pos_type.lower() == 'ascii':
             zz = np.zeros(len(pos))
-            if noup: 
+            if noup:
                 names = ['x','y','dd','station','mount']
                 ncols = 5
             else:
@@ -142,7 +158,7 @@ def makems(msname=None,label=None,tel='MeerKAT',pos=None,pos_type='CASA',
                      antname = list(station),
                      referencelocation=obs_pos)
     else:
-        raise RuntimeError('Observatory name is not known, please provide antenna configuration') 
+        raise RuntimeError('Observatory name is not known, please provide antenna configuration')
 
     if shadow_limit or elevation_limit:
         sm.setlimits(shadowlimit=shadow_limit or 0,elevationlimit=elevation_limit or 0)
@@ -291,9 +307,9 @@ def validate(msname):
         for tabF in glob.glob("tab*"):
             if os.path.isdir(tabF) and os.path.getmtime(tabF)>t0:
                 os.system("rm -fr %s"%tabF)
-        
+
         return False
-    
+
     if validated:
         print("MS validated")
         return True

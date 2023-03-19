@@ -40,10 +40,6 @@ def abort(string):
     logging.abort(string)
 
 
-class CasapyError(Exception):
-    pass
-
-
 _ANTENNAS = {
     "meerkat": "meerkat.itrf.txt",
     "kat-7": "kat-7.itrf.txt",
@@ -148,6 +144,9 @@ def create_empty_ms(msname=None, label=None, tel=None, pos=None, pos_type='casa'
         msname = '%s/%s' % (outdir, msname)
         outdir = None
 
+    if os.path.exists(msname):
+        os.system("rm -fr %s" % msname)
+
     casasm.makems(
         msname=msname,
         label=label,
@@ -177,8 +176,6 @@ def create_empty_ms(msname=None, label=None, tel=None, pos=None, pos_type='casa'
         auto_corr=auto_corr,
         optimise_start=optimise_start,
     )
-    if os.path.exists(msname):
-        os.system("rm -fr %s" % msname)
 
 
 def main():
@@ -317,12 +314,35 @@ def main():
             _type = args.type
             cs = args.coords
 
-        create_empty_ms(msname=args.name, label=args.label, tel=telescope, pos=antennas, feed=" ".join(args.feed),
-              pos_type=_type, ra=args.ra, dec=args.dec, synthesis=args.synthesis, scan_length=args.scan_length,
-              dtime=args.dtime, freq0=args.freq0, dfreq=args.dfreq, nchan=args.nchan,
-              stokes=" ".join(args.pol), setlimits=args.set_limits,
-              elevation_limit=args.elevation_limit, shadow_limit=args.shadow_limit,
-              outdir=args.outdir, coords=cs, lon_lat=args.lon_lat, noup=args.noup,
-              direction=args.direction, nbands=args.nband, date=args.date,
-              fromknown=args.knownconfig, scan_lag=args.scan_lag, auto_corr=args.auto_corr,
-              optimise_start=args.optimise_start, nolog=args.nolog)
+        create_empty_ms(
+            msname=args.name,
+            label=args.label,
+            tel=telescope,
+            pos=antennas,
+            feed=" ".join(args.feed),
+            pos_type=_type,
+            ra=args.ra,
+            dec=args.dec,
+            synthesis=args.synthesis,
+            scan_length=args.scan_length,
+            dtime=args.dtime,
+            freq0=args.freq0,
+            dfreq=args.dfreq,
+            nchan=args.nchan,
+            stokes=" ".join(args.pol),
+            setlimits=args.set_limits,
+            elevation_limit=args.elevation_limit,
+            shadow_limit=args.shadow_limit,
+            outdir=args.outdir,
+            coords=cs,
+            lon_lat=args.lon_lat,
+            noup=args.noup,
+            direction=args.direction,
+            nbands=args.nband,
+            date=args.date,
+            fromknown=args.knownconfig,
+            scan_lag=args.scan_lag,
+            auto_corr=args.auto_corr,
+            optimise_start=args.optimise_start,
+            nolog=args.nolog
+        )

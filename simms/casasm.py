@@ -175,16 +175,16 @@ def makems(
             dish_diam, station, mount = pos["dd"], pos["station"], pos["mount"]
 
         coord_sys = dict(itrf="global", enu="local", wgs84="longlat")
-
+        #import ipdb; ipdb.set_trace()
         sm.setconfig(
             telescopename=tel,
             x=xx,
             y=yy,
             z=zz,
             dishdiameter=dish_diam,
-            mount=list(mount),
+            mount=list(map(lambda x: x.decode("utf-8"), mount.tolist())),
             coordsystem=coord_sys.get(coords, "global"),
-            antname=list(station),
+            antname=list(map(lambda x: x.decode("utf-8"), mount.tolist())),
             referencelocation=obs_pos,
         )
     else:
@@ -225,7 +225,7 @@ def makems(
 
     # fit as many complete scans into field synthesis time as possible
     if nscans == 1 and scan_length[0] < synthesis:
-        nscans = np.int(np.floor(synthesis / scan_length[0]))
+        nscans = int(np.floor(synthesis / scan_length[0]))
         scan_length = scan_length * (nscans)
 
     if ndir >= 1:

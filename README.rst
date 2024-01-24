@@ -2,18 +2,17 @@
 simms
 =====
 
-Creates empty measurement sets using the the CASA simulate tool. 
+Creates empty measurement sets using the the CASA simulate tool.
 
 
 Requires
 ========
 
- * `NRAO CASA <http://casa.nrao.edu/casa_obtaining.shtml>`_
- * `python-casacore <https://github.com/casacore/python-casacore>`_
+ * `NRAO CASA 6 (modular) <https://casadocs.readthedocs.io/en/stable/index.html>`_
  * numpy
 
 
-Install 
+Install
 =======
 
 Github
@@ -23,7 +22,7 @@ Github
 
     $ git clone https://github.com/radio-astro/simms
     $ cd simms
-    $ python setup.py install
+    $ pip install .
 
 
 Pip
@@ -75,7 +74,7 @@ In Python
 
 ::
 
-    from simms import simms
+    import simms
 
     simms.create_empty_ms(msname="Name_of_ms.MS", tel="kat-7", synthesis=1, pos_type='casa', pos="kat-7_antenna_table")
 

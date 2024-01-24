@@ -46,7 +46,7 @@ jobs:
         fi
     - name: Update data
       run: |
-        python3 -m casatools --update-user-data
+        python3 -m pip install casadata
     - name: Test
       run: |
         simms -dir "J2000,04h00m00.0s,-33d00m00s" -T vla -dt 8 -st 0.5 -sl 0.16667 -nc 32 -f0 856MHz -df 26749.9904kHz -pl XX YY -n mk64.0.5hr.10min.scan.8s.208khz.J0400-3300.ms

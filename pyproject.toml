@@ -9,7 +9,7 @@ homepage="https://github.com/radio-astro/simms"
 
 [tool.poetry.dependencies]
 python = "^3.6"
-numpy = "*"
+numpy = "<2.0"
 # Breakage in handling of system-wide ephem directories in casa 6.6.3 and beyond
 casatasks = "<6.6.3"
 casatools = "<6.6.3"

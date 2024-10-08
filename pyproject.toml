@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "simms"
-version = "2.0.0"
+version = "2.0.1"
 description = "Empty MS creation tool"
 authors = ["Sphesihle Makhathini <sphemakh@gmail.com>"]
 license = "GPL2"
@@ -9,9 +9,10 @@ homepage="https://github.com/radio-astro/simms"
 
 [tool.poetry.dependencies]
 python = "^3.6"
-numpy = "*"
-casatasks = "*"
-casatools = "*"
+numpy = "<2.0"
+# Breakage in handling of system-wide ephem directories in casa 6.6.3 and beyond
+casatasks = "<6.6.3"
+casatools = "<6.6.3"
 
 [tool.poetry.scripts]
 simms = "simms.core:main"

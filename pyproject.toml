@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "simms"
-version = "2.0.0"
+version = "2.0.1"
 description = "Empty MS creation tool"
 authors = ["Sphesihle Makhathini <sphemakh@gmail.com>"]
 license = "GPL2"

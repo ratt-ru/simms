@@ -13,6 +13,7 @@ numpy = "<2.0"
 # Breakage in handling of system-wide ephem directories in casa 6.6.3 and beyond
 casatasks = "<6.6.3"
 casatools = "<6.6.3"
+setuptools = "<82.0.0" # Package tools is deprecated as of 82.0.0.
 
 [tool.poetry.scripts]
 simms = "simms.core:main"

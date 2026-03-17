@@ -27,14 +27,12 @@ jobs:
       run: |
         pip install --upgrade pip setuptools wheel
         pip install .
-    - name: Update data
+    # - name: Update data
+    #   run: |
+    #     python3 -m pip install casadata
+    - name: Attempt to create a writable directory for casa data.
       run: |
-        python3 -m pip install casadata
-    - name: Disable CASA auto updates
-      run: |
-        mkdir -p /home/runner/.casa
-        echo "measures_auto_update = False" > /home/runner/.casa/config.py
-        echo "data_auto_update = False" >> /home/runner/.casa/config.py
+        mkdir ~/.casa/data
     - name: Test
       run: |
         simms -dir "J2000,04h00m00.0s,-33d00m00s" -T vla -dt 8 -st 0.5 -sl 0.16667 -nc 32 -f0 856MHz -df 26749.9904kHz -pl XX YY -n mk64.0.5hr.10min.scan.8s.208khz.J0400-3300.ms

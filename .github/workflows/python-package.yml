@@ -22,8 +22,10 @@ jobs:
       uses: astral-sh/setup-uv@v5
     - name: Set up Python ${{ matrix.python-version }}
       run: uv python install ${{ matrix.python-version }}
+    - name: Create virtual environment
+      run: uv venv
     - name: Install dependencies
-      run: uv pip install --system .
+      run: uv pip install .
     - name: Cache CASA data
       uses: actions/cache@v4
       id: casa-cache
@@ -35,4 +37,4 @@ jobs:
       run: mkdir -p ~/.casa/data
     - name: Test
       run: |
-        simms -dir "J2000,04h00m00.0s,-33d00m00s" -T vla -dt 8 -st 0.5 -sl 0.16667 -nc 32 -f0 856MHz -df 26749.9904kHz -pl XX YY -n mk64.0.5hr.10min.scan.8s.208khz.J0400-3300.ms
+        uv run simms -dir "J2000,04h00m00.0s,-33d00m00s" -T vla -dt 8 -st 0.5 -sl 0.16667 -nc 32 -f0 856MHz -df 26749.9904kHz -pl XX YY -n mk64.0.5hr.10min.scan.8s.208khz.J0400-3300.ms

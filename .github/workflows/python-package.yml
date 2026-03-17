@@ -23,7 +23,7 @@ jobs:
     - name: Set up Python ${{ matrix.python-version }}
       run: uv python install ${{ matrix.python-version }}
     - name: Install dependencies
-      run: uv pip install .
+      run: uv pip install --system .
     - name: Cache CASA data
       uses: actions/cache@v4
       id: casa-cache

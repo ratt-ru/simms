@@ -486,7 +486,7 @@ def main():
             )
 
         telescope = args.tel.lower()
-        if telescope in list(_ANTENNAS.keys()) + VLA_CONFS and args.pos == None:
+        if telescope in list(_ANTENNAS.keys()) + VLA_CONFS and args.pos is None:
             if telescope[:3] in ["vla", "jvl"] and args.pos in [None, False, ""]:
                 pos = which_vla(telescope)
                 telescope = "vla"

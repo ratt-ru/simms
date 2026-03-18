@@ -475,7 +475,7 @@ def main():
             else:
                 pos = jdict["tel"]
             # jdict["pos"] = "%s/observatories/%s" % (simms_path, _ANTENNAS[pos])
-            jdict["pos"] = str(importlib.resources.files("simms.observatories")  / _ANTENNAS[pos])
+            jdict["pos"] = str(importlib.resources.files("simms.observatories") / _ANTENNAS[pos])
             jdict["pos_type"] = "ascii"
             jdict["coords"] = "itrf"
 

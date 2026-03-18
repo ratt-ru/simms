@@ -26,8 +26,6 @@ jobs:
       run: uv venv -p python${{ matrix.python-version }}
     - name: Install dependencies
       run: uv pip install .
-    - name: Activate the virtual environment
-      run: source .venv/bin/activate
     - name: Cache CASA data
       uses: actions/cache@v5
       id: casa-cache
@@ -37,6 +35,7 @@ jobs:
     - name: Setup CASA data directory
       if: steps.casa-cache.outputs.cache-hit != 'true'
       run: mkdir -p ~/.casa/data
-    - name: Run test
+    - name: Actvate the environment and run the test
       run: |
+        source .venv/bin/activate
         simms -dir "J2000,04h00m00.0s,-33d00m00s" -T vla -dt 8 -st 0.5 -sl 0.16667 -nc 32 -f0 856MHz -df 26749.9904kHz -pl XX YY -n mk64.0.5hr.10min.scan.8s.208khz.J0400-3300.ms

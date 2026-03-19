@@ -18,11 +18,12 @@ import json
 import logging
 import os
 
-import pkg_resources
+import importlib.metadata
+import importlib.resources
 
 from simms import casasm
 
-__version__ = pkg_resources.get_distribution("simms").version
+__version__ = importlib.metadata.version("simms")
 
 
 # I want to replace error() in argparse.ArgumentParser class
@@ -474,9 +475,7 @@ def main():
             else:
                 pos = jdict["tel"]
             # jdict["pos"] = "%s/observatories/%s" % (simms_path, _ANTENNAS[pos])
-            jdict["pos"] = pkg_resources.resource_filename(
-                "simms.observatories", _ANTENNAS[pos]
-            )
+            jdict["pos"] = str(importlib.resources.files("simms.observatories") / _ANTENNAS[pos])
             jdict["pos_type"] = "ascii"
             jdict["coords"] = "itrf"
 
@@ -487,16 +486,14 @@ def main():
             )
 
         telescope = args.tel.lower()
-        if telescope in list(_ANTENNAS.keys()) + VLA_CONFS and args.pos == None:
+        if telescope in list(_ANTENNAS.keys()) + VLA_CONFS and args.pos is None:
             if telescope[:3] in ["vla", "jvl"] and args.pos in [None, False, ""]:
                 pos = which_vla(telescope)
                 telescope = "vla"
             else:
                 pos = _OBS[args.tel.lower()]
                 telescope = _OBS[pos]
-            antennas = pkg_resources.resource_filename(
-                "simms.observatories", _ANTENNAS[pos]
-            )
+            antennas = str(importlib.resources.files("simms.observatories") / _ANTENNAS[pos])
 
             _type = "ascii"
             cs = "itrf"

@@ -231,7 +231,9 @@ def makems(
     if ndir >= 1:
         # if scan legth is not set, set it to equal the synthesis time per field
         if nscans == 0:
-            scan_length = [synthesis * 1.0] * ndir
+            # NOTE(JSKenyon): Use ceil to round synthesis time to the nearest whole second.
+            # This was added to address issue-67. Cause is likely float conversion in casatools.
+            scan_length = [np.ceil(synthesis * 1.0)] * ndir
             nscans = 1  # one scan per field for the entire st
 
     # Set spectral window information

@@ -1,6 +1,6 @@
 [project]
 name = "simms"
-version = "2.0.1"
+version = "2.1.0"
 description = "Empty MS creation tool"
 authors = [{name = "Sphesihle Makhathini", email = "sphemakh@gmail.com"}]
 license = {text = "GPL-2.0-only"}
